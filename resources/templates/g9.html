@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>tree</title>
+    <script src="resources/js/util.js"></script>
+</head>
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var config = {
+        gameId: 1,
+        canvasWidth: 800,
+        canvasHeight: 800,
+        nodeR: 20,
+        attrSquareWidth: 180,
+        attrSquareHeight: 200,
+        removeX: 670,
+        removeY: 138,
+        removeWidth: 60,
+        removeHeight: 12,
+        addX: 660,
+        addY: 168,
+        addWidth: 73,
+        addHeight: 12,
+        fightAn: 2 * 1000,
+        an: 20
+    };
+    var game = {
+        context: null
+    };
+    var cache = {
+        allNode: null,
+        checked: null,
+        lastChecked: null,
+        rootFightPoint: 0,
+        startFightPoint: 0,
+        endFightPoint: 0,
+        fightAddV: 0,
+        fightPointAn: false,
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        game.context = canvas.getContext("2d");
+        setInterval(function () {
+            draw();
+        }, config.an);
+
+        canvas.onmousedown = function (ev1) {
+            var x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            var y = ev1.clientY;
+            for (var key in cache.allNode) {
+                var node = cache.allNode[key];
+                if (Math.pow(Math.abs(node.x - x), 2) + Math.pow(Math.abs(node.y - y), 2) <= Math.pow(config.nodeR, 2)) {
+                    cache.checked = node;
+                    break;
+                }
+            }
+            if (cache.lastChecked != null) {  //判断是否点击到删除
+                var xl = x - config.removeX;
+                var yl = y - config.removeY;
+                if (xl >= 0 && xl <= config.removeWidth && yl >= 0 && yl < config.removeHeight) {
+                    //点到了
+                    ws.send(getReqJson(2, {"id": cache.lastChecked.id}));
+                    return;
+                }
+            }
+
+            if (cache.lastChecked != null) {  //判断是否点击到添加
+                var xl = x - config.addX;
+                var yl = y - config.addY;
+                if (xl >= 0 && xl <= config.addWidth && yl >= 0 && yl < config.addHeight) {
+                    //点到了
+                    ws.send(getReqJson(3, {"id": cache.lastChecked.id}));
+                    return;
+                }
+            }
+
+        };
+
+        canvas.onmousemove = function (ev1) {
+            if (cache.checked == null)
+                return;
+            var x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            var y = ev1.clientY;
+            cache.checked.x = x;
+            cache.checked.y = y;
+        };
+
+        canvas.onmouseup = function (ev1) {
+            if (cache.checked == null)
+                return;
+            cache.lastChecked = cache.checked;
+            cache.checked = null;
+            ws.send(getReqJson(4, {"id": cache.lastChecked.id, "x": cache.lastChecked.x, "y": cache.lastChecked.y}));
+        }
+
+    };
+
+    function draw() {
+        if (cache.allNode == null)
+            return;
+        var context = game.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+        for (var key in cache.allNode) {
+            drawNode(cache.allNode[key]);
+        }
+        if (cache.lastChecked != null)
+            drawNodeAttr(cache.lastChecked);
+        drawFightPoint();
+        context.restore();
+    }
+
+    function drawFightPoint() {
+        var context = game.context;
+        context.beginPath();
+        context.font = "25px bold 黑体";
+        context.fillStyle = "black";
+        context.fillText("主节点战力:" + cache.rootFightPoint, 300, 50);
+        context.fillText("这个是模拟游戏生物属性树,因为懒惰,所以只用了战力。", 110, 775);
+        context.closePath();
+        if (cache.fightPointAn) {
+            context.beginPath();
+            context.font = "45px bold 黑体";
+            context.fillStyle = "black";
+            cache.startFightPoint += cache.fightAddV;
+            context.fillText(Math.ceil(cache.startFightPoint) + (cache.fightAddV < 0 ? "↓" : "↑"), 370, 300);
+            if ((cache.fightAddV > 0 && cache.startFightPoint >= cache.endFightPoint)
+                || (cache.fightAddV < 0 && cache.startFightPoint <= cache.endFightPoint)) {
+                cache.startFightPoint = 0;
+                cache.endFightPoint = 0;
+                cache.fightPointAn = false;
+            }
+        }
+        context.closePath();
+        context.fill();
+    }
+
+    function drawNodeAttr(node) {
+        var context = game.context;
+        context.beginPath();
+        var sx = config.canvasWidth - config.attrSquareWidth;
+        var sy = 0;
+        context.rect(sx, sy, config.attrSquareWidth, config.attrSquareHeight);
+        console.log("text position :" + sx + " " + sy)
+        context.strokeStyle = "black";
+        context.stroke();
+        context.font = "15px bold 黑体";
+        context.fillStyle = "black";
+        context.fillText("节点属性", sx + 50, sy + 30);
+        context.fillText("节点编号:" + node.Id, sx + 10, sy + 60);
+        context.fillText("总  战 力:" + node.FightPoint, sx + 10, sy + 90);
+        context.fillText("自身战力:" + node.FightPointSelf, sx + 10, sy + 120);
+        context.fillText("删      除", sx + 50, sy + 150);
+        context.fillText("添加子节点", sx + 40, sy + 180);
+        context.closePath();
+    }
+
+    // json 居然是大写，我吐了
+    function drawNode(node) {
+        var context = game.context;
+        context.beginPath();
+        context.arc(node["X"], node["Y"], config.nodeR, 0, Math.PI * 2.0);
+        context.fillStyle = "black";
+        console.log("return node " + JSON.stringify(node))
+        var dadId = node["Dad"];
+        console.log("dadId" + dadId)
+        if (dadId !== -1) {
+            var dad = cache.allNode[dadId];
+            context.moveTo(node["X"], node["Y"]);
+            context.lineTo(dad["X"], dad["Y"]);
+            context.stroke();
+        }
+        context.fill();
+        context.closePath();
+    }
+
+    var response = {
+        1: function (data) {
+            console.log("return node " + JSON.stringify(data))
+            cache.allNode = data["allNode"];
+            cache.startFightPoint = cache.rootFightPoint;
+            cache.endFightPoint = cache.allNode[0].FightPoint;
+            cache.fightPointAn = true;
+            cache.fightAddV = (cache.endFightPoint - cache.startFightPoint) / (config.fightAn / config.an);
+            cache.rootFightPoint = cache.allNode[0].FightPoint;
+            cache.lastChecked = cache.allNode[cache.lastChecked.id];
+        }
+    };
+
+
+    var ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+    ws.onopen = function () {
+        console.log("client：打开连接");
+        ws.send(getReqJson(1, {"a": 1}));
+    };
+    ws.onmessage = function (e) {
+        var resp = toMap(e.data);
+        var msgId = resp["msgId"];
+        response[msgId](resp);
+    };
+    ws.onclose = function (params) {
+        console.log("client：关闭连接");
+    };
+
+    function getReqJson(msgId, data) {
+        var msg = getMsgMap(config.gameId, msgId, data);
+        return toJSON(msg);
+    }
+
+</script>
+<body>
+<canvas id="canvas" style="border: 1px black solid"></canvas>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>迷宫</title>
+</head>
+<style>
+    *{margin: 0;padding: 0;text-align: center}
+</style>
+<script>
+
+    var dot = [];
+
+    var map = []
+    var mark = []
+    var look = []
+    var config = {
+        width:51,
+        height:51,
+        road:0,
+        wall:1,
+        dotW:0,
+        dotH:0
+    }
+
+    var direction = [
+        {x:1, y:0},
+        {x:0, y:1},
+        {x:-1, y:0},
+        {x:0, y:-1}
+    ]
+
+    var alreadyGo = []
+    var line = []
+    var dfs = []
+
+    var end = 0;
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = 800;
+        canvas.height = 800;
+        var context = canvas.getContext("2d");
+        init();
+        var event = setInterval(function () {
+            if(dot.length)
+                update(context)
+            else {
+                if(!end)
+                    go(context)
+                else
+                    clearInterval(event)
+            }
+        }, 1)
+        
+    }
+    
+    function update(context) {
+        var now = pop();
+        mark[now.y][now.x] = 1;
+        for (var i = 0; i < direction.length; i++) {
+            var x = now.x + direction[i].x * 2;
+            var y = now.y + direction[i].y * 2;
+            if (inMap(x, y) && !mark[y][x]) {
+                var other = {x: x, y: y};
+                push(other);
+                map[now.y + direction[i].y][now.x + direction[i].x] = config.road;
+                mark[y][x] = 1;
+                willLook(other)
+                draw(context)
+            }
+        }
+    }
+    
+    function inMap(x, y) {
+        return x >= 0 && y >= 0 && x < config.height && y < config.width
+    }
+
+    function draw(context) {
+        context.clearRect(0, 0, 800, 800);
+        context.save()
+        for (var i = 0; i < map.length; i++) {
+            for (var j = 0; j < map[i].length; j++) {
+                context.beginPath();
+                var x = j * config.dotW;
+                var y = i * config.dotH;
+                context.rect(x, y, x + config.dotW, y + config.dotH);
+                if (line[j][i])
+                    context.fillStyle = "red";
+                else if(look[j][i])
+                    context.fillStyle = map[j][i] == config.road ? "white" : "green";
+                else
+                    context.fillStyle = "white";
+                context.fill();
+                context.closePath();
+            }
+        }
+        context.restore();
+    }
+    
+    function init() {
+        for (var i = 0; i < config.width; i++) {
+            map.push([]);
+            mark.push([]);
+            look.push([]);
+            alreadyGo.push([])
+            line.push([])
+            for (var j = 0; j < config.height; j++) {
+                if(i % 2 && j % 2)
+                    map[i].push(config.road);
+                else
+                    map[i].push(config.wall);
+                mark[i].push(0);
+                look[i].push(0);
+                alreadyGo[i].push(0);
+                line[i].push(0);
+            }
+        }
+        map[0][1] = config.road;
+        map[config.width - 1][config.height - 2] = config.road;
+        config.dotW = 800 / config.width;
+        config.dotH = 800 / config.height;
+        dfs.push({x:1, y:1})
+        push({x:1, y:1});
+        willLook({x:1, y:1});
+    }
+    
+    function go(context) {
+        var v = dfs.pop();
+        if(alreadyGo[v.x][v.y])
+            return
+        alreadyGo[v.x][v.y] = 1;
+        line[v.x][v.y] = 0;
+        for (var i = 0; i < direction.length; i++) {
+            var next = {x:v.x + direction[i].x, y:v.y + direction[i].y}
+            if(inMap(next.x, next.y) && !map[next.x][next.y]) {
+                line[next.x][next.y] = 1;
+                dfs.push(next)
+                draw(context)
+                if(next.x == config.width - 1 && next.y == config.height - 2)
+                    end = 1;
+            }
+        }
+    }
+    
+    function push(v) {
+        if(Math.random() > 0.5)
+            dot.unshift(v);
+        else
+            dot.push(v)
+    }
+    
+    function pop() {
+        if(Math.random() > 0.5)
+            return dot.shift();
+        else
+            return dot.pop();
+    }
+    
+    function willLook(v) {
+        for (var i = v.y - 1; i < v.y + 2; i++) {
+            for (var j = v.x - 1; j < v.x + 2; j++) {
+                look[i][j] = 1;
+            }
+        }
+    }
+
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+
+<script>
+
+    var config = {
+        canvasWidth: 800,       //画布宽
+        canvasHeight: 800,     //画布高
+        context : null,
+        an:20,
+    };
+
+    var cache = {
+        ball : {
+            x : config.canvasWidth / 2,
+            y : config.canvasHeight / 2,
+            r : 0,
+            R : 100,
+        },
+        color : "rgba(155,34,45,1)"
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+        setInterval(function () {
+            draw();
+            update();
+        }, config.an);
+
+        document.addEventListener('touchmove', touch, false);
+
+        function touch(ev1) {
+            var x = ev1.touches[0].clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            var y = ev1.touches[0].clientY;
+            cache.ball.x = x;
+            cache.ball.y = y;
+        }
+
+        canvas.onmousemove = function (ev1) {
+            var x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            var y = ev1.clientY;
+            cache.ball.x = x;
+            cache.ball.y = y;
+        }
+
+    };
+
+
+    function update() {
+
+    }
+
+    function draw() {
+        var context = config.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+
+        //绘制背景
+        context.beginPath();
+        context.fillStyle = "rgba(0,0,0,1)";
+        context.fillRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.closePath();
+
+        //绘制透明圆
+        context.beginPath();
+        context.arc(cache.ball.x, cache.ball.y, cache.ball.R - 5, 0, 2.0*Math.PI);
+        context.fillStyle = "white";
+        context.fill();
+        context.closePath();
+
+        //绘制文字
+        context.beginPath();
+        context.font = "30px bold 黑体";
+        context.fillStyle = "rgba(0,0,0,1)";
+        context.fillText("son", 300, 130);
+        context.closePath();
+
+        //绘制圆
+        context.beginPath();
+        context.arc(cache.ball.x, cache.ball.y, cache.ball.R, 0, 2.0*Math.PI);
+        var grd = context.createRadialGradient(cache.ball.x, cache.ball.y, cache.ball.r, cache.ball.x, cache.ball.y, cache.ball.R);
+        grd.addColorStop(0, "rgba(0,0,0,0)");
+        grd.addColorStop(1, 'rgba(0,0,0,1)');
+        context.fillStyle = grd;
+        context.fill();
+        context.closePath();
+
+        context.restore();
+    }
+</script>
+<body>
+<canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

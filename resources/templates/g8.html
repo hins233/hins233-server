@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>跳就完事儿了</title>
+    <script src="resources/js/util.js"></script>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var config = {
+        canvasWidth: 400,       //画布宽
+        canvasHeight: 680,     //画布高
+        context : null,         //canvas上下文
+        roleR : 10,            //半径
+        groundHeight:10,        //地板高度
+        yv:-14,
+        maxBallR : 10,      //最大球半径
+        minBallR : 5,       //最小球半径
+        upEdge : 200,       //上面临界值
+        ballYDistance : 80  //球之间的y轴距离
+    };
+
+    var gameData = {
+        balls:[],
+        ground:{x:0, y:config.canvasHeight - config.groundHeight},
+        dead:0
+    };
+
+    var role = {
+        x:config.canvasWidth/2,
+        y:config.canvasHeight - config.roleR - config.groundHeight,
+        yv:config.yv,           //y方向速度
+        xv:6,           //x方向速度
+        g:0.5,           //重力加速度
+        left:0,          //左边是否按了
+        right:0,          //右边是否按了
+        subY:0,          //动画效果参数（已经减掉的y）
+        createSubY:0     //上次生产小球的距离
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+        init();
+        var make = setInterval(function () {
+            if(gameData.dead) {
+                clearInterval(make);
+                alert("结束");
+                return;
+            }
+            update();
+            draw();
+        }, 20);
+    };
+
+    window.onkeydown = function (ev) {
+        switch (ev.keyCode) {
+            case 37:
+                role.left = 1;
+                break;
+            case 39:
+                role.right = 1;
+                break;
+        }
+    };
+
+    window.onkeyup = function (ev) {
+        switch (ev.keyCode) {
+            case 37:
+                role.left = 0;
+                break;
+            case 39:
+                role.right = 0;
+                break;
+        }
+    };
+
+    //初始化
+    function init() {
+        for (var i = 0; i < config.canvasHeight - 100; i += config.ballYDistance) {
+            var r = getRoundRandom(config.maxBallR, config.minBallR);
+            gameData.balls.push(getBall(getRoundRandom(config.canvasWidth - r, r), i, r))
+        }
+    }
+
+    //构造球
+    function getBall(x, y, r) {
+        return {x:x, y:y, r:r};
+    }
+    
+    //踩到东西
+    function step() {
+        role.yv = config.yv;
+    }
+
+    //判断碰撞
+    function judge() {
+        if(role.y + config.roleR >= gameData.ground.y) {
+            step();
+        }
+        var needRemove = []
+        for (var i = 0; i < gameData.balls.length; i++) {
+            var ball = gameData.balls[i];
+            if(Math.sqrt(Math.pow(Math.abs(role.x - ball.x), 2) + Math.pow(Math.abs(role.y - ball.y), 2)) <= ball.r + config.roleR) {
+                step();
+                needRemove.push(i);
+            }
+            if(ball.y - ball.r >= config.canvasHeight)
+                needRemove.push(i);
+        }
+        for (var i = 0; i < needRemove.length; i++)
+            gameData.balls.splice(needRemove[i], 1);
+        if(role.y - config.roleR >= config.canvasHeight)
+            gameData.dead = 1;
+    }
+
+    //运动变化
+    function run() {
+        role.y += role.yv;
+        role.yv += role.g;
+        role.x += (role.left * -1 + role.right) * role.xv;
+        if(role.x + config.roleR >= config.canvasWidth)
+            role.x = config.canvasWidth - config.roleR;
+        if(role.x - config.roleR <= 0)
+            role.x = config.roleR;
+        if(role.y <= config.upEdge){
+            var height = config.upEdge - role.y - role.subY;
+            for (var i = 0; i < gameData.balls.length && height > 0; i++) {
+                gameData.balls[i].y += height;
+            }
+            gameData.ground.y += height > 0 ? height : 0;
+            role.subY += height;
+            role.createSubY += height > 0 ? height : 0;
+            if(role.createSubY >= config.ballYDistance){
+                for (var i = 0; i < role.createSubY/config.ballYDistance - 1; i++) {
+                    var r = getRoundRandom(config.maxBallR, config.minBallR);
+                    gameData.balls.push(getBall(getRoundRandom(config.canvasWidth - r, r), i * config.ballYDistance, r))
+                }
+                role.createSubY %= config.ballYDistance;
+            }
+        }else{
+            role.subY = 0;
+        }
+    }
+    
+    function update() {
+        judge();
+        run();
+    }
+    
+    //绘制
+    function draw() {
+        config.context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        config.context.save();
+        config.context.beginPath();
+        config.context.arc(role.x, role.y, config.roleR, 0, Math.PI * 2.0);
+        config.context.rect(gameData.ground.x, gameData.ground.y, config.canvasWidth, config.groundHeight);
+        config.context.fillStyle = "black";
+        config.context.fill();
+        config.context.closePath();
+        for (var i = 0; i < gameData.balls.length; i++) {
+            config.context.beginPath();
+            config.context.arc(gameData.balls[i].x, gameData.balls[i].y, gameData.balls[i].r, 0, Math.PI * 2.0);
+            config.context.strokeStyle = "black";
+            config.context.stroke();
+            config.context.closePath();
+        }
+        config.context.restore();
+    }
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>hello</title>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var map = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ];
+
+    var config = {
+        canvasW:1000,
+        canvasH:800,
+        initBallNum:3,
+        startX:500,
+        startY:700,
+        startXV:2,
+        startYV:-2,
+        ballR:5
+    };
+
+    var width = config.canvasW / map[0].length;
+    var height = config.canvasH / map.length;
+
+    var balls = [];
+    var bricks = [];
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasW;
+        canvas.height = config.canvasH;
+        var context = canvas.getContext("2d");
+        init(canvas);
+        setInterval(function () {
+            update();
+            draw(context);
+        }, 20);
+    };
+
+    function init(canvas) {
+        for (var i = 0; i < map.length; i++)
+            for (var j = 0; j < map[i].length; j++)
+                if(map[i][j]) {
+                    bricks.push({x: (j * width) + 1, y: (i * height) + 1, i:i, j:j});
+                }
+        balls.push({x:config.startX, y:config.startY, xv:config.startXV, yv:config.startYV, r:config.ballR});
+        canvas.onclick = function (ev1) {
+            var x = ev1.clientX - ((document.body.scrollWidth - config.canvasW) /2);
+            var y = ev1.clientY;
+            balls.push({x:x, y:y, xv:config.startXV * (Math.random() > 0.5 ? 1 : -1), yv:config.startYV * (Math.random() > 0.5 ? 1 : -1), r:config.ballR});
+        }
+    }
+
+    function update() {
+        for (var i = 0; i < balls.length; i++) {
+            if(wallKonck(balls[i]))
+                continue;
+            for (var j = 0; j < bricks.length; j++) {
+                if(knock(balls[i], bricks[j])) {
+                    if(map[bricks[j].i][bricks[j].j] === 1) {
+                        map[bricks[j].i][bricks[j].j] = 0;
+                        bricks.splice(j, 1);
+                    }
+                    break;
+                }
+            }
+        }
+        for (var i = 0; i < balls.length; i++) {
+            var ball = balls[i];
+            ball.x += ball.xv;
+            ball.y += ball.yv;
+        }
+    }
+
+    function draw(context) {
+        context.clearRect(0, 0, config.canvasW, config.canvasH);
+        context.save();
+        for (var i = 0; i < map.length; i++)
+            for (var j = 0; j < map[i].length; j++)
+                if(map[i][j]) {
+                    context.beginPath();
+                    context.rect((j * width) + 1, (i * height) + 1, width - 2, height - 2);
+                    context.fillStyle = "black";
+                    context.fill();
+                    context.closePath();
+                }
+        for (var i = 0; i < balls.length; i++) {
+            var ball = balls[i];
+            context.beginPath();
+            context.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2.0);
+            context.fillStyle = "black";
+            context.fill();
+            context.closePath();
+        }
+        context.restore();
+    }
+
+    function knock(ball, brick) {
+        var isEnd = 0;
+        if(ball.x + ball.r >= brick.x && ball.x < brick.x && ball.y - ball.r / 2 < brick.y + height && ball.y + ball.r / 2 > brick.y && ball.xv > 0
+        || ball.x - ball.r <= brick.x + width && ball.x > brick.x && ball.y - ball.r / 2 < brick.y + height && ball.y + ball.r / 2 > brick.y && ball.xv < 0) { //左右弹
+            ball.xv *= -1;
+            console.log(brick.x, brick.y)
+            isEnd = 1;
+        }
+        if(ball.y + ball.r >= brick.y && ball.y < brick.y && ball.x - ball.r / 2 < brick.x + width && ball.x + ball.r / 2 > brick.x && ball.yv > 0
+        || ball.y - ball.r <= brick.y + height && ball.y > brick.y && ball.x - ball.r / 2 < brick.x + width && ball.x + ball.r / 2 > brick.x && ball.yv < 0) { //上下弹
+            ball.yv *= -1;
+            console.log(brick.x, brick.y)
+            isEnd = 1;
+        }
+        return isEnd;
+    }
+
+    function wallKonck(ball) {
+        if(ball.x - ball.r <= 0 || ball.x + ball.r >= config.canvasW)
+            ball.xv *= -1;
+        if(ball.y - ball.r <= 0 || ball.y + ball.r >= config.canvasH)
+            ball.yv *= -1;
+    }
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

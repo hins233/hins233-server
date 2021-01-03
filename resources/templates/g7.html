@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>跑路</title>
+    <script src="resources/js/util.js"></script>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+    var config = {
+        canvasWidth : 400,       //画布宽
+        canvasHeight : 680,     //画布高
+        context : null,                 //canvas上下文
+        initCreateSpeed : 2000,   //初始化生产格子的速度
+        intervalTime : 20,      //帧率时间
+        cellHeight : 10,        //地块厚度
+        cellSpeed : 1.5          //格子上移速度
+    };
+
+    /** 下面的地块类型 */
+    var cell = [
+        getCell(0, 150, 50, function () {
+            
+        })
+    ];
+
+    /** 游戏数据 */
+    var gameData = {
+        x:0,
+        y:0,
+        cells:[],
+        over:0
+    };
+
+    /** 定时器们 */
+    var timer = [
+        getTimer(0, config.initCreateSpeed, function () {
+            var lastCell = createCell(getRandom(cell.length) - 1);
+            gameData.cells.push(lastCell);
+        }),
+    ];
+
+    var role = {
+        x:0,
+        y:0,
+        cell:null,
+        left:0,
+        right:0,
+        g:3,                    //角色下降速度
+        v:3,                    //角色x轴移动速度
+        r:5                     //角色大小
+    };
+
+
+    /** 构造地块
+     * @param type 类型
+     * @param lenMax 最大长度
+     * @param lenMin 最小长度
+     * @param step 踩到上面的限制
+     * */
+    function getCell(type, lenMax, lenMin, step){
+        return {type:type, lenMax:lenMax, lenMin:lenMin, step:step};
+    }
+
+    /** 构造定时器 */
+    function getTimer(startTime, time, run) {
+        return {startTime:startTime, time:time, run:run};
+    }
+
+    /** 生成地块 */
+    function createCell(type){
+        var temp = cell[type];
+        var len = getRoundRandom(temp.lenMax, temp.lenMin);
+        return {x:getRandom(config.canvasWidth - len) ,y:config.canvasHeight, len:len, type:type};
+    }
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+        init();
+        setInterval(function () {
+            update();
+        }, config.intervalTime);
+    };
+
+    window.onkeydown = function (ev) {
+        switch (ev.keyCode) {
+            case 37:
+                role.left = 1;
+                break;
+            case 39:
+                role.right = 1;
+                break;
+        }
+        if(role.cell != null && !(role.x >= role.cell.x && role.x <= role.cell.x + role.cell.len)){
+            role.cell = null;
+        }
+    };
+
+    window.onkeyup = function (ev) {
+        switch (ev.keyCode) {
+            case 37:
+                role.left = 0;
+                break;
+            case 39:
+                role.right = 0;
+                break;
+        }
+    };
+    
+    function init() {
+        timer[0].run();
+        role.x = gameData.cells[0].x + role.r;
+        role.y = gameData.cells[0].y - role.r;
+        role.cell = gameData.cells[0];
+    }
+
+    function update() {
+        if(gameData.over)
+            return;
+        timerRun();
+        updateData();
+        draw();
+    }
+
+    //运行定时器
+    function timerRun() {
+        for (var i = 0; i < timer.length; i++) {
+            if(timer[i].startTime + config.intervalTime >= timer[i].time){
+                timer[i].run();
+                timer[i].startTime = 0;
+            }else
+                timer[i].startTime += config.intervalTime;
+        }
+    }
+
+    //数据更新
+    function updateData() {
+        for (var i = 0; i < gameData.cells.length; i++) {
+            gameData.cells[i].y -= config.cellSpeed;
+            if(role.cell == null){
+                if(role.x >= gameData.cells[i].x && role.x <= gameData.cells[i].x + gameData.cells[i].len &&
+                    Math.abs(role.y - gameData.cells[i].y) <= role.g + config.cellSpeed){
+                    role.cell = gameData.cells[i];
+                }
+            }
+        }
+        if(gameData.cells[0].y + config.cellHeight <= 0)
+            gameData.cells.shift();
+        if(role.cell != null) {
+            role.y = role.cell.y - role.r;
+            if(!(role.x >= role.cell.x && role.x <= role.cell.x + role.cell.len))
+                role.cell = null;
+        }else {
+            role.y += role.g;
+        }
+        role.x += -1 * role.left * role.v + role.right * role.v;
+        if(role.x + role.r >= config.canvasWidth)
+            role.x = config.canvasWidth - role.r;
+        if(role.x - role.r <= 0)
+            role.x = role.r;
+        if(role.y - role.r <= 0 || role.y - role.r >= config.canvasHeight) {
+            gameData.over = 1;
+            alert("dead");
+        }
+    }
+    
+    //绘制
+    function draw() {
+        config.context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        config.context.save();
+        for (var i = 0; i < gameData.cells.length; i++) {
+            config.context.beginPath();
+            config.context.rect(gameData.cells[i].x, gameData.cells[i].y, gameData.cells[i].len, config.cellHeight);
+            config.context.fillStyle = "black";
+            config.context.fill();
+            config.context.closePath();
+        }
+        config.context.beginPath();
+        config.context.arc(role.x, role.y, role.r, 0, Math.PI * 2.0);
+        config.context.fillStyle = "black";
+        config.context.fill();
+        config.context.closePath();
+        config.context.restore();
+    }
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>英雄</title>
+</head>
+<style>
+    *{
+        margin: 0;
+        padding: 0;
+        text-align: center;
+    }
+</style>
+<script>
+    let role = {x:400, y:400, r:10, v:1.5, color:"black", wTime:5000, lastWTime:1,attackV:5.0, lastAttackTime:0, isW:0, direction:[0, 0, 0, 0], lastDirection:[1, 0, 0, 0]}
+    let bullets = []
+    let roads = []
+    let config = {
+        bulletV:10,
+        bulletR:5,
+        bulletRate:0.3,
+        playerR:10,
+        wL:30,
+        wR:10,
+        bgColor:"#EA7500"
+    }
+    let time = 0;
+
+    window.onload = function () {
+        let canvas = document.getElementById("canvas");
+        canvas.width = 800;
+        canvas.height = 800;
+        let context = canvas.getContext("2d");
+        setInterval(function () {
+            draw(context);
+            update();
+            time+=20
+        }, 20)
+    }
+
+    window.onkeydown = function (ev) {
+        switch (ev.keyCode) {
+            case 37:
+                role.direction[2] = 1
+                break
+            case 38:
+                role.direction[0] = 1
+                break
+            case 39:
+                role.direction[3] = 1
+                break
+            case 40:
+                role.direction[1] = 1
+                break
+            case 88:    //发射
+                let attackTime = 1000 / role.attackV
+                if(time - role.lastAttackTime >= attackTime) {  //攻速限制
+                    let direction = [role.lastDirection[0], role.lastDirection[1], role.lastDirection[2], role.lastDirection[3]]
+                    let proBullet = {x: role.x, y: role.y, r: config.bulletR, v: config.bulletV, direction: direction, color:role.color, isRate:false, degree:0}
+                    bullets.push(proBullet)
+                    role.lastAttackTime = time;
+                }
+                break
+            case 81:    //q
+                if(role.r < 25)
+                    role.r++
+                break
+            case 87:    //w
+                if(!role.isW) {
+                    let proBullet1 = {x: role.x, y: role.y, r: config.wR, v: config.bulletV, direction: [], color: "black", isRate: true, degree: 0}
+                    let proBullet2 = {x: role.x, y: role.y, r: config.wR, v: config.bulletV, direction: [], color: "black", isRate: true, degree: 90}
+                    let proBullet3 = {x: role.x, y: role.y, r: config.wR, v: config.bulletV, direction: [], color: "black", isRate: true, degree: 180}
+                    let proBullet4 = {x: role.x, y: role.y, r: config.wR, v: config.bulletV, direction: [], color: "black", isRate: true, degree: 270}
+                    bullets.push(proBullet1)
+                    bullets.push(proBullet2)
+                    bullets.push(proBullet3)
+                    bullets.push(proBullet4)
+                    role.lastWTime = time
+                    role.isW = 1
+                }
+                break
+        }
+        let direction = role.direction;
+        if(!((direction[0] && direction[1] && direction[2] && direction[3]) || (!direction[0] && !direction[1] && !direction[2] && !direction[3]) ||
+            (direction[0] && direction[1] && !direction[2] && !direction[3]) || (!direction[0] && !direction[1] && direction[2] && direction[3]))) {
+            role.lastDirection[0] = direction[0];
+            role.lastDirection[1] = direction[1];
+            role.lastDirection[2] = direction[2];
+            role.lastDirection[3] = direction[3];
+        }
+    }
+
+    window.onkeyup = function (ev) {
+        switch (ev.keyCode) {
+            case 37:
+                role.direction[2] = 0
+                break
+            case 38:
+                role.direction[0] = 0
+                break
+            case 39:
+                role.direction[3] = 0
+                break
+            case 40:
+                role.direction[1] = 0
+                break
+            case 81:    //q发射
+                let direction = [role.lastDirection[0], role.lastDirection[1], role.lastDirection[2], role.lastDirection[3]]
+                let proBullet = {x: role.x, y: role.y, r: role.r, v: config.bulletV, direction: direction, color:role.color, isRate:false, degree:0}
+                bullets.push(proBullet)
+                role.r = config.playerR
+                break
+        }
+        let direction = role.direction;
+        if(!((direction[0] && direction[1] && direction[2] && direction[3]) || (!direction[0] && !direction[1] && !direction[2] && !direction[3]) ||
+            (direction[0] && direction[1] && !direction[2] && !direction[3]) || (!direction[0] && !direction[1] && direction[2] && direction[3]))) {
+            role.lastDirection[0] = direction[0];
+            role.lastDirection[1] = direction[1];
+            role.lastDirection[2] = direction[2];
+            role.lastDirection[3] = direction[3];
+        }
+    }
+
+    function draw(context) {
+        context.clearRect(0, 0, 800, 800)
+        context.save()
+
+        context.beginPath()
+        context.rect(0, 0, 800, 800);
+        context.fillStyle = config.bgColor
+        context.fill()
+        context.closePath()
+
+        for (let i = 0; i < roads.length; i++) {
+            let road = roads[i]
+            context.beginPath()
+            context.arc(road.x, road.y , road.r, 0, Math.PI * 2.0);
+            context.fillStyle = "white"
+            context.fill()
+            context.closePath()
+        }
+
+        for (let i = 0; i < bullets.length; i++) {
+            let bullet = bullets[i]
+            context.beginPath()
+            if(bullet.isRate){
+                if(role.lastWTime && time - role.lastWTime <= role.wTime) {
+                    context.arc(role.x + config.wL * Math.cos(bullet.degree), role.y + config.wL * Math.sin(bullet.degree), bullet.r, 0, Math.PI * 2.0);
+                    roads.push({
+                        x: role.x + config.wL * Math.cos(bullet.degree),
+                        y: role.y + config.wL * Math.sin(bullet.degree),
+                        r: bullet.r
+                    })
+                }
+            }else {
+                context.arc(bullet.x, bullet.y, bullet.r, 0, Math.PI * 2.0);
+            }
+            context.fillStyle = bullet.color
+            context.fill()
+            context.closePath()
+        }
+
+        context.beginPath()
+        context.arc(role.x, role.y, role.r, 0, Math.PI*2.0);
+        context.fillStyle = role.color
+        context.fill()
+        context.closePath()
+
+
+
+        context.restore()
+    }
+
+    function update() {
+        roleRun();
+        bulletRun();
+    }
+
+    function roleRun() {
+        if(role.direction[0])
+            role.y-=role.v;
+        if(role.direction[1])
+            role.y+=role.v;
+        if(role.direction[2])
+            role.x-=role.v;
+        if(role.direction[3])
+            role.x+=role.v;
+    }
+
+    function bulletRun() {  //此处有小bug
+        for (let i = 0; i < bullets.length; i++) {
+            let bullet = bullets[i]
+            if(bullet.isRate){
+                bullet.degree+=config.bulletRate;
+                if(bullet.degree > 360)
+                    bullet.degree = 1;
+            }else {
+                if (bullet.direction[0])
+                    bullet.y -= bullet.v;
+                if (bullet.direction[1])
+                    bullet.y += bullet.v;
+                if (bullet.direction[2])
+                    bullet.x -= bullet.v;
+                if (bullet.direction[3])
+                    bullet.x += bullet.v;
+            }
+            if(bullet.x + config.bulletR >= 0 && bullet.x - config.bulletR <= 800
+            && bullet.y + config.bulletR >= 0 && bullet.y - config.bulletR <= 800 && !bullet.isRate)
+                roads.push({x:bullet.x, y:bullet.y, r:bullet.r})
+        }
+    }
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

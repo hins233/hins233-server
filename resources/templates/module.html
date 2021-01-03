@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>hello</title>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var config = {
+        canvasWidth: 800,       //画布宽
+        canvasHeight: 800,     //画布高
+        context : null,
+        an:20,
+    };
+
+    var cache = {
+        balls:[]
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+        setInterval(function () {
+            draw();
+            update();
+        }, config.an);
+
+        canvas.onclick = function (ev1) {
+            var x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            var y = ev1.clientY;
+
+        }
+
+    };
+    
+    function update() {
+        
+    }
+    
+    function draw() {
+        var context = config.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+
+        context.restore();
+    }
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

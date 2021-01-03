@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>啦啦啦</title>
+
+</head>
+<body style="text-align: center;margin: 0;padding: 0">
+    <canvas id="canvas" style="border: 1px solid black;"></canvas>
+
+    <script>
+        var map = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+        var _xm = [40, 120, 200, 280, 360, 440, 520, 600, 680, 760, 800]
+
+        var _xy = [
+            {x:-1,y:0},
+            {x:1,y:0},
+            {x:0,y:-1},
+            {x:0,y:1},
+            {x:-1,y:-1},
+            {x:1,y:1},
+            {x:-1,y:1},
+            {x:1,y:-1},
+        ]
+
+        var _gameover = 0
+
+        var _color = 0
+
+        var _w = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+
+        window.onload = function (ev) {
+            var canvas = document.getElementById("canvas")
+            canvas.width = 800
+            canvas.height = 800
+            var content = canvas.getContext("2d")
+
+            makeMap(content)
+
+            canvas.onclick = function (ev2) {
+                if(_gameover) {
+                    content.clearRect(0, 0, 800, 800)
+                    resetMap()
+                    makeMap(content)
+                    _gameover = 0
+                    return
+                }
+                var x = ev2.clientX - (_w - 800) /2 + 40
+                var y = ev2.clientY + 40
+                var i = Math.floor(x/80)
+                var j = Math.floor(y/80)
+                if(map[j][i] != 0) {
+                    alert("此处已有棋子")
+                    return
+                }
+                map[j][i] = _color == 0 ? 1 : 2;
+                _color = _color == 0 ? 1 : 0;
+
+                if(logic(j, i)){
+                    content.clearRect(0, 0, 800, 800)
+
+                    content.beginPath()
+                    content.font = "bold 40px Arial"
+                    var str = _color == 1 ? "red" : "black"
+                    content.fillText("winner is " + str, 280, 340)
+                    content.font = "20px Arial"
+                    content.fillText("点击屏幕以重置", 335, 450)
+                    _gameover = 1
+                }else
+                    makePlayer(content)
+            }
+
+            canvas.onmousemove = function (ev2) {
+                if(_gameover)
+                    return
+                var x = ev2.clientX - (_w - 800) / 2;
+                var y = ev2.clientY
+                for (var i = 0;i < _xm.length; i++){
+                    if(x <= _xm[i]) {
+                        for (var j = 0;j < _xm.length; j++){
+                            if(y <= _xm[j]) {
+                                content.clearRect(0, 0, 800, 800)
+
+                                content.beginPath()
+                                content.arc(80 * i,80 * j, 30, 0, Math.PI * 2,true)
+                                content.fillStyle = _color == 0 ? "red" : "black"
+                                content.fill()
+
+                                makeMap(content)
+                                makePlayer(content)
+                                break
+                            }
+                        }
+                        break
+                    }
+                }
+            }
+        }
+        
+        function logic(i, j) {
+            var ply = map[i][j]
+            var num = 1
+
+            for (var l = 0; l < _xy.length; l++){
+                if(l % 2 == 0)
+                    num = 1
+                var _i = i
+                var _j = j
+                for(;;_i += _xy[l].x, _j += _xy[l].y) {
+                    if (!index(_i + _xy[l].x, _j + _xy[l].y))
+                        break
+                    if(map[_i + _xy[l].x][_j + _xy[l].y] == ply) {
+                        num++;
+                        if(isWin(num)) {
+                            return 1
+                        }
+                    }else
+                        break
+                }
+            }
+            return 0
+        }
+
+        function isWin(num) {
+            return num >= 5
+        }
+
+        function makeMap(content) {
+            for (var i = 0; i < map.length; i++) {
+                content.beginPath()
+                content.moveTo(i * 80, 0)
+                content.lineTo(i * 80, 800)
+                content.stroke()
+
+                content.beginPath()
+                content.moveTo(0, i * 80)
+                content.lineTo(800, i * 80)
+                content.stroke()
+            }
+        }
+
+        function makePlayer(content) {
+            for (var k = 0; k < map.length; k++) {
+                for (var l = 0; l < map.length; l++) {
+                    if(map[k][l] != 0){
+                        content.beginPath()
+                        content.arc(80 * l,80 * k, 30, 0, Math.PI * 2,true)
+                        content.fillStyle = map[k][l] == 1 ? "red" : "black"
+                        content.fill()
+                    }
+                }
+            }
+        }
+        
+        function index(i, j) {
+            return i>=0&&i<map.length&&j>=0&&j<map[0].length
+        }
+
+        function resetMap() {
+            map = [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            ]
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>象棋</title>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var config = {
+        canvasWidth : 800,       //画布宽
+        canvasHeight : 800,     //画布高
+        cellWH : 80,        //格子宽高
+        cellSubChess : 5,   //格子与棋子的大小差距
+        checkerboardComputerWidth : 8, //棋盘宽(计算机下标)
+        checkerboardComputerHeight : 9, //棋盘高(计算机下标)
+        riverPos : 4,                   //对上面来说河的地址
+        bossRoundLeftPos : 3,           //将军左边下标
+        bossRoundRightPos : 5,          //将军右边下标
+        bossRoundTopPos : 2,            //将军上边下标
+        bossRoundUnderPos : 7,           //将军下边下标
+        color : ["blue", "red"],        //两种势力颜色
+        context : null                 //canvas上下文
+    };
+
+    var countConfig = { //通过基本配置计算的配置
+        checkerboardWidth : config.checkerboardComputerWidth * config.cellWH,    //棋盘的宽
+        checkerboardHeight : config.checkerboardComputerHeight * config.cellWH,    //棋盘的高
+        checkerboardLeftMargin : (config.canvasWidth - config.checkerboardComputerWidth * config.cellWH) / 2,
+        checkerboardTopMargin : (config.canvasHeight - config.checkerboardComputerHeight * config.cellWH) / 2,
+        chessR : config.cellWH / 2 - config.cellSubChess,
+        leftNull : (config.canvasWidth - config.checkerboardComputerWidth * config.cellWH) / 2 - (config.cellWH / 2 - config.cellSubChess),
+        rightNull : config.canvasWidth - ((config.canvasWidth - config.checkerboardComputerWidth * config.cellWH) / 2 - (config.cellWH / 2 - config.cellSubChess)),
+        topNull : (config.canvasHeight - config.checkerboardComputerHeight * config.cellWH) / 2 - (config.cellWH / 2 - config.cellSubChess),
+        underNull : config.canvasHeight - ((config.canvasHeight - config.checkerboardComputerHeight * config.cellWH) / 2 - (config.cellWH / 2 - config.cellSubChess)),
+    };
+
+    var chessesEmun = [
+        getChess(["马", "馬"], [
+            getPos(0, 1),
+            getPos(config.checkerboardComputerHeight, 1),
+            getPos(0, config.checkerboardComputerWidth - 1),
+            getPos(config.checkerboardComputerHeight, config.checkerboardComputerWidth - 1)
+        ], 1, true, false, function (beforePos, afterPos) {
+            if(beforePos.x === afterPos.x || beforePos.y === afterPos.y)
+                return 0;
+            var ruleX = afterPos.x < beforePos.x ? afterPos.x + 1 : afterPos.x - 1;
+            var ruleY = afterPos.y < beforePos.y ? afterPos.y + 1 : afterPos.y - 1;
+            if(map[ruleY][ruleX].type !== 0)    //马腿子
+                return 0;
+            return Math.abs(afterPos.x - beforePos.x) + Math.abs(afterPos.y - beforePos.y) === 3;   //日字型 判断差和等于3就行了。
+        }),
+        getChess(["炮", "砲"], [
+            getPos(2, 1),
+            getPos(config.checkerboardComputerHeight - 2, 1),
+            getPos(2, config.checkerboardComputerWidth - 1),
+            getPos(config.checkerboardComputerHeight - 2, config.checkerboardComputerWidth - 1)
+        ], 2, true, false, function (beforePos, afterPos) {
+            if (beforePos.x !== afterPos.x && beforePos.y !== afterPos.y)
+                return 0;
+            var afterCell = map[afterPos.y][afterPos.x];
+            if (afterCell.power === -1)
+                return getChessMidNum(beforePos, afterPos) === 0;
+            return getChessMidNum(beforePos, afterPos) === 1;
+        }),
+        getChess(["车", "車"], [
+            getPos(0, 0),
+            getPos(config.checkerboardComputerHeight, 0),
+            getPos(0, config.checkerboardComputerWidth),
+            getPos(config.checkerboardComputerHeight, config.checkerboardComputerWidth)
+        ], 3, true, false, function (beforePos, afterPos) {
+            if(beforePos.x !== afterPos.x && beforePos.y !== afterPos.y)
+                return 0;
+            return getChessMidNum(beforePos, afterPos) === 0;
+        }),
+        getChess(["卒", "兵"], [
+            getPos(3, 0),
+            getPos(config.checkerboardComputerHeight - 3, 0),
+            getPos(3, 2),
+            getPos(config.checkerboardComputerHeight - 3, 2),
+            getPos(3, 4),
+            getPos(config.checkerboardComputerHeight - 3, 4),
+            getPos(3, 6),
+            getPos(config.checkerboardComputerHeight - 3, 6),
+            getPos(3, 8),
+            getPos(config.checkerboardComputerHeight - 3, 8),
+        ], 4, true, false, function (beforePos, afterPos) {
+            if (beforePos.x !== afterPos.x && beforePos.y !== afterPos.y)
+                return 0;
+            var beforeCell = map[beforePos.y][beforePos.x];
+            if(beforeCell.power === 0){ //todo:兵需要判断势力分上下 不太好 目前0势力是在上面的。
+                if(afterPos.y < beforePos.y || beforePos.y <= config.riverPos && afterPos.x !== beforePos.x)
+                    return 0;
+            }else{
+                if(afterPos.y > beforePos.y || beforePos.y > config.riverPos && afterPos.x !== beforePos.x)
+                    return 0;
+            }
+            return Math.abs(afterPos.x - beforePos.x) + Math.abs(afterPos.y - beforePos.y) === 1;
+        }),
+        getChess(["象", "相"], [
+            getPos(0, 2),
+            getPos(config.checkerboardComputerHeight, 2),
+            getPos(0, config.checkerboardComputerWidth - 2),
+            getPos(config.checkerboardComputerHeight, config.checkerboardComputerWidth - 2),
+        ], 5, false, false, function (beforePos, afterPos) {
+            if(beforePos.x === afterPos.x || beforePos.y === afterPos.y)
+                return 0;
+            var ruleX = afterPos.x < beforePos.x ? afterPos.x + 1 : afterPos.x - 1;
+            var ruleY = afterPos.y < beforePos.y ? afterPos.y + 1 : afterPos.y - 1;
+            if(map[ruleY][ruleX].type !== 0)    //跟马一毛一样的腿子
+                return 0;
+            return Math.abs(afterPos.x - beforePos.x) === 2 && Math.abs(afterPos.y - beforePos.y) === 2;
+        }),
+        getChess(["将", "帅"], [
+            getPos(0, config.checkerboardComputerWidth / 2),
+            getPos(config.checkerboardComputerHeight, config.checkerboardComputerWidth / 2)
+        ], 6, false, true, function (beforePos, afterPos) {
+            if (beforePos.x !== afterPos.x && beforePos.y !== afterPos.y)
+                return 0;
+            return Math.abs(afterPos.x - beforePos.x) + Math.abs(afterPos.y - beforePos.y) === 1; //一字型 判断差和等于1就行了。
+        }),
+        getChess(["士", "仕"], [
+            getPos(0, config.checkerboardComputerWidth / 2 - 1),
+            getPos(config.checkerboardComputerHeight, config.checkerboardComputerWidth / 2 - 1),
+            getPos(0, config.checkerboardComputerWidth / 2 + 1),
+            getPos(config.checkerboardComputerHeight, config.checkerboardComputerWidth / 2 + 1)
+        ], 7, false, true, function (beforePos, afterPos) {
+            if(beforePos.x === afterPos.x || beforePos.y === afterPos.y)
+                return 0;
+            return Math.abs(afterPos.x - beforePos.x) + Math.abs(afterPos.y - beforePos.y) === 2;   //口字型 判断差和等于2就行了。
+        })
+    ];
+    /** 将棋子枚举保存到map中 方便根据类型取 */
+    var chesses = new Map();
+    /** 棋盘 */
+    var map = [];
+    /** 游戏数据 */
+    var gameData = {
+        checked:null,
+        isAnimationing:0,    //是否在播放动画中
+        nowPower:0,           //当前势力（就是当前玩家）
+        isEnd : 0
+    };
+
+    //构造棋子枚举
+    /**
+     *  @desc 描述
+     *  @initPos 初始化位置
+     *  @type 类型
+     *  @canCross 能否过河
+     *  @boss 是否是在将旁边的
+     *  @go 走入下一个位置的方法
+     * **/
+    function getChess(desc, initPos, type, canCross, boss, go) {
+        return {desc:desc, initPos:initPos, type:type, canCross:canCross, boss:boss, go:go};
+    }
+
+    //构造Pos
+    function getPos(x, y){
+        return {x: x, y: y};
+    }
+
+    //构造格子
+    function getCell(power, type){
+        return {power:power, type:type};
+    }
+
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        var context = canvas.getContext("2d");
+        config.context = context;
+        context.font = 'bold 20px Arial';
+        init();
+        draw();
+    };
+    
+    function init() {
+        for (var i = 0; i <= config.checkerboardComputerHeight; i++) {
+            map.push([]);
+            for (var j = 0; j <= config.checkerboardComputerWidth; j++) {
+                map[i].push(getCell(-1, 0));
+            }
+        }
+        for (var i = 0; i < chessesEmun.length; i++) {
+            var chess = chessesEmun[i];
+            chesses.set(chess.type, chess);
+        }
+        chesses.forEach(function (val, key, map) {
+            for (var i = 0; i < val.initPos.length; i++) {
+                var pos = val.initPos[i];
+                this.map[pos.x][pos.y] = getCell(i % 2 === 0 ? 0 : 1, key);
+            }
+        });
+    }
+    //绘制就懒得封装公用代码了。。
+    function draw() {
+        config.context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        config.context.save();
+        for (var i = 0; i < map.length; i++) {
+            var isRiver = 0;
+            if(i === config.riverPos){
+                config.context.beginPath();
+                config.context.rect(countConfig.checkerboardLeftMargin, countConfig.checkerboardTopMargin + i * config.cellWH, countConfig.checkerboardWidth, config.cellWH);
+                config.context.strokeStyle = "black";
+                config.context.stroke();
+                config.context.closePath();
+                isRiver = 1;
+            }
+            for (var j = 0; j < map[i].length; j++) {
+                if(i < map.length - 1 && j < map[i].length - 1 && !isRiver) {
+                    config.context.beginPath();
+                    config.context.rect(countConfig.checkerboardLeftMargin + j * config.cellWH, countConfig.checkerboardTopMargin + i * config.cellWH, config.cellWH, config.cellWH);
+                    config.context.strokeStyle = "black";
+                    config.context.stroke();
+                    config.context.closePath();
+                }
+                var cell = map[i][j];
+                if(cell.power !== -1){
+                    config.context.beginPath();
+                    config.context.arc(countConfig.checkerboardLeftMargin + j * config.cellWH,
+                        countConfig.checkerboardTopMargin + i * config.cellWH,
+                        countConfig.chessR, 0, Math.PI * 2.0
+                    );
+                    config.context.fillStyle = "white";
+                    config.context.strokeStyle = "black";
+                    config.context.stroke();
+                    config.context.fill();
+                    config.context.closePath();
+                    config.context.beginPath();
+                    config.context.fillStyle = config.color[cell.power];
+                    config.context.fillText(chesses.get(cell.type).desc[cell.power], countConfig.checkerboardLeftMargin + j * config.cellWH - 10, countConfig.checkerboardTopMargin + i * config.cellWH + 5);
+                    config.context.closePath();
+                }
+            }
+        }
+        config.context.restore();
+    }
+
+    //选中绘制
+    function checked(i, j){
+        config.context.beginPath();
+        config.context.arc(countConfig.checkerboardLeftMargin + i * config.cellWH,
+            countConfig.checkerboardTopMargin + j * config.cellWH,
+            countConfig.chessR + 1, 0, Math.PI * 2.0
+        );
+        config.context.strokeStyle = "yellow";
+        config.context.stroke();
+        config.context.closePath();
+    }
+
+    //操作
+    window.onclick = function op(ev1) {
+        if(gameData.isEnd)
+            return;
+        var x = ev1.clientX - ((document.body.scrollWidth - 800) /2);
+        var y = ev1.clientY;
+        if(x < countConfig.leftNull || x >= countConfig.rightNull || y < countConfig.topNull  || y >= countConfig.underNull)
+            return;
+        x -= countConfig.leftNull;
+        y -= countConfig.topNull;
+        var i = Math.floor(x / config.cellWH);
+        var j = Math.floor(y / config.cellWH);
+        var cell = map[j][i];
+        if(cell.power === -1 && gameData.checked == null) {
+            return;
+        }
+        if(gameData.checked == null && cell.power !== gameData.nowPower)
+            return;
+        if(gameData.checked == null || gameData.checked.cell.power === cell.power) {
+            draw();
+            checked(i, j);
+            gameData.checked = {x:j, y:i, cell:cell};
+            return;
+        }
+        var chess = chesses.get(gameData.checked.cell.type);
+        var before = getPos(gameData.checked.y, gameData.checked.x);
+        var after = getPos(i, j);
+        if(!chess.canCross && isCrossRiver(before, after)) {
+            checkedReset();
+            return;
+        }
+        if(chess.boss && !inCrossBossPos(before, after)){
+            checkedReset();
+            return;
+        }
+        if(!chess.go(before, after)){
+            checkedReset();
+            return;
+        }
+        if(cell.type === 6) {
+            gameData.isEnd = 1;
+            alert(gameData.nowPower ? "红色" : "蓝色" + "方胜");
+            checkedReset();
+            return;
+        }
+        cell.type = gameData.checked.cell.type;
+        cell.power = gameData.checked.cell.power;
+        gameData.checked.cell.type = 0;
+        gameData.checked.cell.power = -1;
+        checkedReset();
+        changePower();
+    };
+
+    //选中重置
+    function checkedReset() {
+        gameData.checked = null;
+        draw();
+    }
+
+    //切换势力
+    function changePower() {
+        gameData.nowPower = gameData.nowPower ? 0 : 1;
+    }
+
+    //获取两个棋子之间的棋子数量
+    function getChessMidNum(beforePos, afterPos) {
+        var midNum = 0;
+        if (afterPos.x === beforePos.x) {
+            for (var i = Math.min(afterPos.y, beforePos.y) + 1; i < Math.max(afterPos.y, beforePos.y); i++)
+                if(map[i][afterPos.x].power !== -1)
+                    midNum ++;
+        }else {
+            for (var i = Math.min(afterPos.x, beforePos.x) + 1; i < Math.max(afterPos.x, beforePos.x); i++)
+                if (map[afterPos.y][i].power !== -1)
+                    midNum++;
+        }
+        return midNum;
+    }
+
+    //是否过了河
+    function isCrossRiver(beforePos, afterPos) {
+        if(beforePos.y <= config.riverPos)
+            return afterPos.y > config.riverPos;
+        else
+            return afterPos.y <= config.riverPos;
+    }
+
+    //是否在将的周围那圈位置
+    function inCrossBossPos(beforePos, afterPos) {
+        if(afterPos.x < config.bossRoundLeftPos || afterPos.x > config.bossRoundRightPos)
+            return 0;
+        if(beforePos.y <= config.riverPos)
+            return afterPos.y <= config.bossRoundTopPos;
+        else
+            return afterPos.y >= config.bossRoundUnderPos;
+    }
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>hello</title>
+    <script src="resources/js/util.js"></script>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+    #ob{
+        position: absolute;
+        top: 890px;
+        left: 40%;
+    }
+</style>
+<script>
+
+    var config = {
+        gameId:16,
+        canvasWidth: document.documentElement.clientWidth - 200,       //画布宽
+        canvasHeight: document.documentElement.clientHeight - 50,     //画布高
+        context : null,
+        an:20,
+    };
+
+    let map =[
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ];
+
+    let cache = {
+        width:config.canvasWidth / map[0].length,
+        height:config.canvasHeight / map.length,
+        ob:0,  //1:wall 2:start 3:end
+        down:false,  //鼠标按下
+        startPoint:{i:-1, j:-1},
+        endPoint:{i:-1, j:-1},
+        route:[]
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+        setInterval(function () {
+            draw();
+            update();
+        }, config.an);
+
+        canvas.onmousedown = function (ev1) {
+            let x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            let y = ev1.clientY;
+
+            let i = Math.floor(y / cache.height);
+            let j = Math.floor(x / cache.width);
+            if(cache.ob === 1){
+                if(cache.endPoint.i === i && cache.endPoint.j === j || map[i][j])
+                    return;
+                cache.startPoint.i = i;
+                cache.startPoint.j = j;
+            } else if(cache.ob === 2){
+                if(cache.startPoint.i === i && cache.startPoint.j === j || map[i][j])
+                    return;
+                cache.endPoint.i = i;
+                cache.endPoint.j = j;
+            }
+            cache.down = true;
+        }
+
+        canvas.onmouseup = function (ev1) {
+            cache.down = false;
+        }
+
+        canvas.onmousemove= function (ev1){
+            if(cache.ob || !cache.down)
+                return;
+            let x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            let y = ev1.clientY;
+
+            let i = Math.floor(y / cache.height);
+            let j = Math.floor(x / cache.width);
+
+            if(i === cache.startPoint.i && j === cache.startPoint.j ||
+                i === cache.endPoint.i && j === cache.endPoint.j)
+                return;
+            map[i][j] = 1;
+        }
+
+    };
+    
+    function update() {
+        
+    }
+    
+    function draw() {
+        let context = config.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+        for (let i = 0; i < map.length; i++) {
+            for (let j = 0; j < map[i].length; j++) {
+                context.beginPath();
+                if(cache.startPoint.i === i && cache.startPoint.j === j) {
+                    context.fillStyle = "green";
+                    context.fillRect(j * cache.width, i * cache.height, cache.width - 0.5, cache.height - 0.5);
+                } else if(cache.endPoint.i === i && cache.endPoint.j === j) {
+                    context.fillStyle = "red";
+                    context.fillRect(j * cache.width, i * cache.height, cache.width - 0.5, cache.height - 0.5);
+                } else if(map[i][j] === 1) {
+                    context.fillStyle = "black";
+                    context.fillRect(j * cache.width, i * cache.height, cache.width - 0.5, cache.height - 0.5);
+                } else {
+                    context.strokeStyle = "black";
+                    context.strokeRect(j * cache.width, i * cache.height, cache.width - 0.5, cache.height - 0.5);
+                }
+                context.closePath();
+            }
+        }
+        if(cache.route.length > 1) {
+            context.beginPath()
+            context.lineWidth = 5;
+            context.moveTo(cache.route[0].x * cache.width + cache.width/2, cache.route[0].y * cache.height + cache.height/2);
+        }
+        for (let i = 1; i < cache.route.length; i++) {
+            let point = cache.route[i];
+            context.lineTo(point.x * cache.width + cache.width/2, point.y * cache.height + cache.height/2);
+        }
+        context.strokeStyle = 'black';
+        context.stroke();
+        context.restore();
+    }
+
+    function changeOb(ob){
+        cache.ob = ob
+    }
+
+    function resetMap() {
+        cache.startPoint.i = -1;
+        cache.startPoint.j = -1;
+        cache.endPoint.i = -1;
+        cache.endPoint.j = -1;
+        cache.ob = 0;
+        cache.down = false;
+        //初始化地图
+        let w = document.getElementById("mapWidth").value;
+        let h = document.getElementById("mapHeight").value;
+        map = []
+        for (let k = 0; k < h; k++) {
+            map.push([]);
+            for (let l = 0; l < w; l++) {
+                map[k].push(0);
+            }
+        }
+        cache.width = config.canvasWidth / map[0].length;
+        cache.height = config.canvasHeight / map.length;
+    }
+
+    function run(){
+        if(cache.startPoint.i === -1 ||
+            cache.startPoint.j === -1 ||
+            cache.endPoint.i === -1 ||
+            cache.endPoint.j === -1
+        ){
+            alert("请设置开始点和结束点")
+            return;
+        }
+        //发送后端
+        ws.send(getReqJson(1, {"map":map, "startI":cache.startPoint.i, "startJ":cache.startPoint.j, "endI":cache.endPoint.i, "endJ":cache.endPoint.j}));
+    }
+
+    var response = {
+        1:function (data) {
+            cache.route = data["route"];
+        }
+    };
+
+
+
+    var ws = new WebSocket("ws://localhost:8080/ws");
+
+    ws.onopen = function() {
+        console.log("client：打开连接");
+    };
+    ws.onmessage = function(e) {
+        var resp = toMap(e.data);
+        var msgId = resp["msgId"];
+        response[msgId](resp);
+    };
+    ws.onclose = function(params) {
+        console.log("client：关闭连接");
+        ws = new WebSocket("ws://localhost:8080/ws");
+    };
+
+    function getReqJson(msgId, data) {
+        var msg = getMsgMap(config.gameId, msgId, data);
+        return toJSON(msg);
+    }
+
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+    <div id="ob">
+        长：<input id="mapWidth" type="number"/>
+        宽：<input id="mapHeight" type="number"/>
+        <button class="button" onclick="resetMap()">设置地图</button>
+        <br/>
+        <button class="button" onclick="changeOb(1)">setStart</button>
+        <button class="button" onclick="changeOb(2)">setEnd</button>
+        <button class="button" onclick="changeOb(0)">setWall</button>
+        <button class="button" onclick="run()">run</button>
+    </div>
+</body>
+</html>

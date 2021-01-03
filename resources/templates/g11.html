@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ball</title>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var config = {
+        canvasWidth: 800,       //画布宽
+        canvasHeight: 800,     //画布高
+        context : null,
+        ballR:10,
+        ballP:0.3,
+        an:20,
+        color:["red", "yellow", "white", "green", "orange", "pink", "cyan"]
+    };
+
+    var cache = {
+        balls:[],
+        checkBalls:[]
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+
+        setInterval(function () {
+            draw();
+            update();
+        }, config.an);
+
+        canvas.onclick = function (ev1) {
+            var x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            var y = ev1.clientY;
+            cache.balls.push(getBall(x + 20, y, 20, 0, 0));
+            cache.balls.push(getBall(x - 20, y, -20, 0, 0));
+            cache.balls.push(getBall(x, y - 20, 0, -20, 0));
+            cache.balls.push(getBall(x, y + 20, 0, 20, 0));
+            cache.balls.push(getBall(x + 20, y + 20, 20, 20, 0));
+            cache.balls.push(getBall(x + 20, y - 20, 20, -20, 0));
+            cache.balls.push(getBall(x - 20, y + 20, -20, 20, 0));
+            cache.balls.push(getBall(x - 20, y - 20, -20, -20, 0));
+        }
+    };
+    
+    function update() {
+        ballRun();
+    }
+    //球的运动主方法
+    function ballRun() {
+        var balls = cache.balls;
+        for (var i = 0; i < balls.length; i++) {
+            var ball = balls[i];
+            if(ball.xv === 0 && ball.yv === 0)
+                continue;
+            //检查撞击
+            checkPunch(ball);
+
+            //运动
+            ball.x += ball.xv;
+            ball.y += ball.yv;
+            var mod = ballMod(ball);
+            var xp = ball.xv / mod;
+            var yp = ball.yv / mod;
+            ball.xv -= config.ballP * xp;
+            if(xp > 0 && ball.xv <= 0 || xp < 0 && ball.xv >= 0)
+                ball.xv = 0;
+            ball.yv -= config.ballP * yp;
+            if(yp > 0 && ball.yv <= 0 || yp < 0 && ball.yv >= 0)
+                ball.yv = 0;
+
+            //检查撞墙
+            if(ball.x + config.ballR > config.canvasWidth || ball.x - config.ballR < 0) {
+                if(ball.x + config.ballR > config.canvasWidth)
+                    ball.x = config.canvasWidth - config.ballR;
+                if(ball.x - config.ballR < 0)
+                    ball.x = config.ballR;
+                ball.xv *= -1;
+                changeColor(ball);
+            }
+            if(ball.y + config.ballR > config.canvasHeight || ball.y - config.ballR < 0) {
+                if(ball.y + config.ballR > config.canvasHeight)
+                    ball.y = config.canvasHeight - config.ballR;
+                if(ball.y - config.ballR < 0)
+                    ball.y = config.ballR;
+                ball.yv *= -1;
+                changeColor(ball);
+            }
+        }
+    }
+
+    //检查撞击
+    function checkPunch(ballA) {
+        var balls = cache.balls;
+        for (var i = 0; i < balls.length; i++) {
+            var ballB = balls[i];
+            if(ballA === ballB || ballA.punchBall.has(ballB))
+                continue;
+            //求出下一步的位置是否撞击
+            var LPow = Math.pow(ballA.x + ballA.xv - ballB.x, 2) + Math.pow(ballA.y + ballA.yv - ballB.y, 2);
+            if(LPow <= Math.pow(config.ballR * 2, 2)){
+                checkPos(ballA, ballB);
+                countPunch(ballA, ballB);
+                //防止下一次 ballB跟ballA 继续判断，导致bug
+                ballB.punchBall.add(ballA);
+                changeColor(ballA);
+                changeColor(ballB);
+            }
+        }
+        ballA.punchBall.clear();
+    }
+
+    //检查两球是否重叠
+    function checkPos(ballA, ballB) {
+        var LPow = Math.pow(ballA.x - ballB.x, 2) + Math.pow(ballA.y - ballB.y, 2);
+        if(LPow < Math.pow(config.ballR * 2, 2)) {
+            var L = Math.sqrt(LPow);
+            var forkL = config.ballR * 2 - L;
+            var mod = ballMod(ballA);
+            var xp = ballA.xv / mod;
+            var yp = ballA.yv / mod;
+            ballA.x -= forkL * xp;
+            ballA.y -= forkL * yp;
+        }
+    }
+
+    //相撞改变颜色
+    function changeColor(ball) {
+        ball.color++;
+        if(ball.color >= config.color.length)
+            ball.color = 0;
+    }
+
+    function draw(){
+        var context = config.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+        context.beginPath();
+        context.fillStyle = "black";
+        context.fillRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.closePath();
+        drawBall();
+        context.restore();
+    }
+    
+    function drawBall() {
+        var context = config.context;
+        var balls = cache.balls;
+        for (var i = 0; i < balls.length; i++) {
+            var ball = balls[i];
+            context.beginPath();
+            context.arc(ball.x, ball.y, config.ballR, 0, Math.PI * 2.0);
+            context.strokeStyle = config.color[ball.color];
+            context.stroke();
+            context.closePath();
+        }
+    }
+
+
+    function getBall(x, y, xv, yv, color) {
+        return {x:x, y:y, xv:xv, yv:yv, color:color, punchBall:new Set()};
+    }
+
+    //获取球的x,y分量平方模
+    function ballMod(ball) {
+        return Math.sqrt(Math.pow(ball.xv, 2) + Math.pow(ball.yv, 2));
+    }
+
+    //相撞后的力改变
+    function countPunch(ballA, ballB) {
+        var change = getChangeXY(ballA, ballB);
+        ballA.xv -= change.changeX;
+        ballA.yv -= change.changeY;
+        ballB.xv += change.changeX;
+        ballB.yv += change.changeY;
+    }
+
+    function getChangeXY(ballA, ballB) {
+        var xL = ballA.x - ballB.x;
+        var yL = ballA.y - ballB.y;
+        var xvL = ballA.xv - ballB.xv;
+        var yvL = ballA.yv - ballB.yv;
+        var changeX = (xvL * Math.pow(xL, 2) + yvL * xL * yL) / (Math.pow(xL, 2) + Math.pow(yL, 2));
+        var changeY = (yvL * Math.pow(yL, 2) + xvL * xL + yL) / (Math.pow(xL, 2) + Math.pow(yL, 2));
+        return {changeX:changeX, changeY:changeY}
+    }
+    
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

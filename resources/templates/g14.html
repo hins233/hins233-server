@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>拼图</title>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var config = {
+        canvasWidth: 800,       //画布宽
+        canvasHeight: 800,     //画布高
+        context : null,
+        an:20,
+        squareW:100,
+        space:3,
+        minV:0.03,
+        direction:[
+            {x:1, y:0},
+            {x:0, y:1},
+            {x:-1, y:0},
+            {x:0, y:-1}
+        ],
+        tip:[{name:"这是一个打乱顺序的拼图,现在你可以尝试按【q】,使它重新排好序", transparent:0.99, v:0},
+            {name:"现在你可以自己用鼠标打乱顺序,然后按【q】让它自动还原", transparent:0.01, v:0},
+        ],
+    };
+
+    var cache = {
+        nums: [
+            [1, 0, 3],
+            [4, 2, 6],
+            [7, 5, 8]
+        ],
+        checked:{x:-1, y:-1},
+        numsPos:[],
+        anIng:false,
+        anNum:[{i:-1, j:-1, x:-1, y:-1, lastX:-1, lastY:-1}, {i:-1, j:-1, x:-1, y:-1, lastX:-1, lastY:-1}],
+        finding:false,
+        result:[],
+        lastShift:null,
+    };
+
+    var countConfig = {
+        squareX:(config.canvasWidth - config.squareW * cache.nums.length) / 2,
+        squareY:200,
+        fontSize:config.squareW / 3,
+        fontX:(config.squareW - config.squareW / 4)/2,
+        fontY:(config.squareW)/1.7,
+    };
+
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+        init();
+        setInterval(function () {
+            draw();
+            update();
+        }, config.an);
+
+        canvas.onclick = function (ev1) {
+            if(cache.anIng || cache.finding)
+                return;
+            var x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            var y = ev1.clientY;
+            var numsPos = cache.numsPos;
+            for (var i = 0; i < numsPos.length; i++) {
+                for (var j = 0; j < numsPos[i].length; j++) {
+                    var pos = numsPos[i][j];
+                    if(x >= pos.x && x <= pos.x + config.squareW - config.space &&
+                       y >= pos.y && y <= pos.y + config.squareW - config.space){
+                        var checked = cache.checked;
+                        if(checked.x === -1){
+                            checked.x = i;
+                            checked.y = j;
+                            return;
+                        }
+                        //动画赋值
+                        cache.anIng = true;
+                        var anNum = cache.anNum;
+                        anNum[0].i = checked.x;
+                        anNum[0].j = checked.y;
+                        anNum[0].x = numsPos[anNum[0].i][anNum[0].j].x;
+                        anNum[0].y = numsPos[anNum[0].i][anNum[0].j].y;
+                        anNum[0].lastX = anNum[0].x;
+                        anNum[0].lastY = anNum[0].y;
+                        anNum[1].i = i;
+                        anNum[1].j = j;
+                        anNum[1].x = numsPos[anNum[1].i][anNum[1].j].x;
+                        anNum[1].y = numsPos[anNum[1].i][anNum[1].j].y;
+                        anNum[1].lastX = anNum[1].x;
+                        anNum[1].lastY = anNum[1].y;
+                        //去除选中
+                        checked.x = -1;
+                        checked.y = -1;
+                        return;
+                    }
+                }
+            }
+        };
+
+    };
+
+    window.onkeydown = function (ev) {
+        switch (ev.keyCode) {
+            case 81:
+                if(cache.finding || cache.anIng)
+                    return;
+                cache.finding = true;
+                cache.result = bfs(cache.nums).reverse();
+                if(cache.result.length === 0) {
+                    alert("无解,因为只能向0移动,所以乱序操作时只能一格一格移动0,并且只能平移(因为这是拼图游戏的规则。。。只能往空白地方一格一格移动)");
+                    cache.finding = false;
+                }
+                break;
+        }
+    };
+    // 八数码问题
+    // 一个状态表示成一维的形式，求出除0之外所有数字的逆序数之和，也就是每个数字前面比它大的数字的个数的和，称为这个状态的逆序。
+    // 若两个状态的逆序奇偶性相同，则可相互到达，否则不可相互到达。
+    function bfs(nums) {
+        var str = arrayToString(nums);
+        if(str === "123456780") {
+            return ["123456780"];
+        }
+        var queue = [];
+        var visited = new Map();
+        queue.push(str);
+        visited.set(str, str);
+        while (queue.length !== 0){
+            var head = queue.shift(); // pop
+            var nextState = findNextState(head);
+            for (var i = 0; i < nextState.length; i++) {
+                if(!visited.has(nextState[i])){
+                    queue.push(nextState[i]);
+                    visited.set(nextState[i], head);
+                    if(nextState[i] === "123456780"){
+                        return getResultArray(visited, "123456780");
+                    }
+                }
+            }
+        }
+        return [];
+    }
+    
+    function findNextState(str) {
+        var nums = stringToArray(str);
+        var direction = config.direction;
+        var nextState = [];
+        for (var i = 0; i < nums.length; i++) {
+            for (var j = 0; j < nums[i].length; j++) {
+                if(nums[i][j] === 0){
+                    for (var k = 0; k < direction.length; k++) {
+                        var direct = direction[k];
+                        var x = i + direct.x;
+                        var y = j + direct.y;
+                        if(inArea(x, y)){
+                            swap(nums, i, j, x, y);
+                            nextState.push(arrayToString(nums));
+                            swap(nums, i, j, x, y);
+                        }
+                    }
+                }
+            }
+        }
+        return nextState;
+    }
+    
+    function inArea(i, j) {
+        return i >= 0 && i < cache.nums.length && j >=0 && j < cache.nums[0].length;
+    }
+    
+    function swap(nums, x1, y1, x2, y2) {
+        var temp = nums[x1][y1];
+        nums[x1][y1] = nums[x2][y2];
+        nums[x2][y2] = temp;
+    }
+
+    function getResultArray(map, end) {
+        var resultArray = [];
+        resultArray.push(end);
+        while (map.get(end) !== end){
+            resultArray.push(map.get(end));
+            end = map.get(end);
+        }
+        return resultArray;
+    }
+
+    function findStrPosNotSame(a, b) {
+        var arrayA = stringToArray(a);
+        var arrayB = stringToArray(b);
+        var ab = [];
+        for (var i = 0; i < arrayA.length; i++) {
+            for (var j = 0; j < arrayA[i].length; j++) {
+                if(arrayA[i][j] !== arrayB[i][j]){
+                    ab.push({i:i, j:j})
+                }
+            }
+        }
+        return ab;
+    }
+
+    
+    function init() {
+        var nums = cache.nums;
+        var numsPos = cache.numsPos;
+        for (var i = 0; i < nums.length; i++) {
+            numsPos.push([]);
+            for (var j = 0; j < nums[i].length; j++) {
+                var x = i * config.squareW + countConfig.squareX;
+                var y = j * config.squareW + countConfig.squareY;
+                numsPos[i].push({x:x, y:y});
+            }
+        }
+    }
+    
+    function update() {
+        changeAnUpdate();
+        updateTip();
+    }
+
+    function changeAnUpdate() {
+        if(cache.finding && cache.result.length !== 0 && !cache.anIng){
+            var a;
+            var b;
+            if(cache.lastShift == null){
+                if(cache.result.length === 1) {
+                    cache.result = [];
+                    cache.finding = false;
+                    return;
+                }
+                a = cache.result.shift();
+                b = cache.result.shift();
+            }else{
+                a = cache.lastShift;
+                b = cache.result.shift();
+            }
+            var anNum = cache.anNum;
+            var changePos = findStrPosNotSame(a, b);
+            anNum[0].i = changePos[0].j;
+            anNum[0].j = changePos[0].i;
+            anNum[0].x = cache.numsPos[anNum[0].i][anNum[0].j].x;
+            anNum[0].y = cache.numsPos[anNum[0].i][anNum[0].j].y;
+            anNum[0].lastX = anNum[0].x;
+            anNum[0].lastY = anNum[0].y;
+
+            anNum[1].i = changePos[1].j;
+            anNum[1].j = changePos[1].i;
+            anNum[1].x = cache.numsPos[anNum[1].i][anNum[1].j].x;
+            anNum[1].y = cache.numsPos[anNum[1].i][anNum[1].j].y;
+            anNum[1].lastX = anNum[1].x;
+            anNum[1].lastY = anNum[1].y;
+
+            cache.lastShift = b;
+
+            if(cache.result.length === 0){
+                cache.finding = false;
+                cache.lastShift = null;
+                config.tip[0].v = -0.03;
+                config.tip[1].v = 0.03;
+            }
+
+            cache.anIng = true;
+        }
+        if(!cache.anIng)
+            return;
+        var anNum = cache.anNum;
+        var one = anNum[0];
+        var two = anNum[1];
+        if(one.x === two.lastX && one.y === two.lastY &&
+           two.x === one.lastX && two.y === one.lastY){
+            cache.anIng = false;
+            var nums = cache.nums;
+            var temp = nums[one.j][one.i];
+            nums[one.j][one.i] = nums[two.j][two.i];
+            nums[two.j][two.i] = temp;
+            return;
+        }
+        if(one.x !== two.lastX){
+            var l = two.lastX - one.x;
+            var v = Math.abs(l / 10) < config.minV ? (l < 0 ? config.minV * -1 : config.minV) : l / 10;
+            one.x += v;
+            if(l >= 0 && one.x > two.lastX || l < 0 && one.x < two.lastX)
+                one.x = two.lastX;
+        }else if(one.y !== two.lastY){
+            var l = two.lastY - one.y;
+            var v = Math.abs(l / 10) < config.minV ? (l < 0 ? config.minV * -1 : config.minV) : l / 10;
+            one.y += v;
+            if(l >= 0 && one.y > two.lastY || l < 0 && one.y < two.lastY)
+                one.y = two.lastY;
+        }
+        if(two.x !== one.lastX){
+            var l = one.lastX - two.x;
+            var v = Math.abs(l / 10) < config.minV ? (l < 0 ? config.minV * -1 : config.minV) : l / 10;
+            two.x += v;
+            if(l >= 0 && two.x > one.lastX || l < 0 && two.x < one.lastX)
+                two.x = one.lastX;
+        }else if(two.y !== one.lastY){
+            var l = one.lastY - two.y;
+            var v = Math.abs(l / 10) < config.minV ? (l < 0 ? config.minV * -1 : config.minV) : l / 10;
+            two.y += v;
+            if(l >= 0 && two.y > one.lastY || l < 0 && two.y < one.lastY)
+                two.y = one.lastY;
+        }
+    }
+    
+    function updateTip() {
+        for (var i = 0; i < config.tip.length; i++) {
+            var tipObj = config.tip[i];
+            if(tipObj.transparent === 0 || tipObj.transparent === 1) continue;
+            tipObj.transparent += tipObj.v;
+            if(tipObj.transparent > 1) tipObj.transparent = 1;
+            if(tipObj.transparent < 0) tipObj.transparent = 0;
+        }
+    }
+    
+    function draw() {
+        var context = config.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+        drawSquare();
+        drawChecked();
+        drawTip();
+        context.restore();
+    }
+
+    function drawSquare() {
+        var nums = cache.nums;
+        var numsPos = cache.numsPos;
+        var context = config.context;
+        for (var i = 0; i < nums.length; i++) {
+            for (var j = 0; j < nums[i].length; j++) {
+                context.beginPath();
+                var x = -1;
+                var y = -1;
+                if (cache.anIng) {
+                    if (i === cache.anNum[0].i && j === cache.anNum[0].j) {
+                        x = cache.anNum[0].x;
+                        y = cache.anNum[0].y;
+                    } else if (i === cache.anNum[1].i && j === cache.anNum[1].j) {
+                        x = cache.anNum[1].x;
+                        y = cache.anNum[1].y;
+                    }
+                }
+                if(x === -1) {
+                    x = numsPos[i][j].x;
+                    y = numsPos[i][j].y;
+                }
+                context.rect(x, y, config.squareW - config.space, config.squareW - config.space);
+                context.strokeStyle = "black";
+                context.stroke();
+                context.closePath();
+                context.beginPath();
+                context.font = countConfig.fontSize + "px bold 黑体";
+                context.fillStyle = "black";
+                context.fillText(nums[j][i], x + countConfig.fontX, y + countConfig.fontY);
+                context.closePath();
+            }
+        }
+    }
+    
+    function drawTip() {
+        var context = config.context;
+        for (var i = 0; i < config.tip.length; i++) {
+            var tipObj = config.tip[i];
+            context.beginPath();
+            context.font = "20px bold 黑体";
+            context.fillStyle = "black";
+            context.globalAlpha = tipObj.transparent;
+            context.fillText(tipObj.name, 100, 100);
+            context.closePath();
+        }
+    }
+
+    function drawChecked() {
+        if(cache.checked.x === -1)
+            return;
+        var context = config.context;
+        var numsPos = cache.numsPos;
+        var i = cache.checked.x;
+        var j = cache.checked.y;
+        var x = numsPos[i][j].x;
+        var y = numsPos[i][j].y;
+        context.beginPath();
+        context.rect(x, y, config.squareW - config.space + 1, config.squareW - config.space + 1);
+        context.strokeStyle = "yellow";
+        context.stroke();
+        context.closePath();
+    }
+
+    function arrayToString(array) {
+        var str = "";
+        for (var i = 0; i < array.length; i++) {
+            for (var j = 0; j < array[i].length; j++) {
+                str += array[i][j];
+            }
+        }
+        return str;
+    }
+
+    function stringToArray(str) {
+        var array = [];
+        for (var i = 0; i < 3; i++) {
+            array.push([]);
+            for (var j = 0; j < 3; j++) {
+                array[i].push(str.charAt(i * 3 + j) - '0');
+            }
+        }
+        return array;
+    }
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

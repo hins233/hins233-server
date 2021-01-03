@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>hello</title>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var config = {
+        canvasWidth: 800,       //画布宽
+        canvasHeight: 800,     //画布高
+        context : null,
+        an:20,
+        globalAlphaSubNum:0.02,
+        r:7,
+        ballNum:500,
+        moveRound:10,
+        color:["red", "yellow", "#AE0000", "green", "orange", "pink", "cyan", "gray",
+            "#02DF82", "#00EC00", "#A8FF24", "#4F9D9D", "#FFDC35"],
+    };
+
+    var cache = {
+        balls:[],
+        mouseX:-1,
+        mouseY:-1,
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+        setInterval(function () {
+            draw();
+            update();
+        }, config.an);
+
+        canvas.onmousemove = function (ev1) {
+            var x = ev1.clientX - (document.body.clientWidth - config.canvasWidth) / 2;
+            var y = ev1.clientY;
+            cache.mouseX = x;
+            cache.mouseY = y;
+        }
+
+    };
+    
+    function update() {
+        if(cache.mouseX === -1)
+            return;
+        var balls = cache.balls;
+        balls.push(getBall(cache.mouseX, cache.mouseY, getRoundRandomColor(), 1));
+        balls.push(getBall(cache.mouseX, cache.mouseY, getRoundRandomColor(), 1));
+        for (var i = 0; i < balls.length; i++) {
+            var ball = balls[i];
+            if(ball.globalAlpha > 0)
+                ball.globalAlpha -= config.globalAlphaSubNum;
+            if(ball.globalAlpha < 0){
+                ball.globalAlpha = 0;
+            }
+            var x = getRandom(config.moveRound) - config.moveRound/2;
+            var y = getRandom(config.moveRound) - config.moveRound/2;
+            ball.x += x;
+            ball.y += y;
+        }
+        if(balls.length >= config.ballNum){
+            for (var i = 0; i < balls.length - config.ballNum; i++) {
+                balls.shift();
+            }
+        }
+    }
+    
+    function draw() {
+        var context = config.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+        // context.beginPath();
+        // context.fillStyle = "black";
+        // context.fillRect(0, 0, config.canvasWidth, config.canvasHeight);
+        // context.fill();
+        // context.closePath();
+        drawBall();
+        context.restore();
+    }
+    
+    function drawBall() {
+        var balls = cache.balls;
+        var context = config.context;
+        for (var i = 0; i < balls.length; i++) {
+            var ball = balls[i];
+            context.beginPath();
+            context.arc(ball.x, ball.y, config.r, 0, Math.PI * 2.0);
+            context.fillStyle = ball.color;
+            context.globalAlpha = ball.globalAlpha;
+            context.fill();
+            context.closePath();
+        }
+    }
+    
+    function getBall(x, y, color, globalAlpha) {
+        return {x:x, y:y, color:color, globalAlpha:globalAlpha};
+    }
+
+    function getRoundRandomColor() {
+        return config.color[getRandom(config.color.length - 1)];
+    }
+
+    function getRandom(max) {
+        return Math.ceil(Math.random() * max);
+    }
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

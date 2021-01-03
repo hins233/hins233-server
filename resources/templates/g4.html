@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>扫雷</title>
+</head>
+<style>
+    *{margin: 0;padding: 0;text-align: center}
+</style>
+<script>
+
+    var config = {
+        mapX : 50,
+        mapY : 50,
+        leiNum : 200,
+        color : ["red", "gray", "black"],
+        leiX : 800 / 50,
+        leiY : 800 / 50
+    };
+
+    var direction = [
+        {x:1, y:0},
+        {x:0, y:1},
+        {x:-1, y:0},
+        {x:0, y:-1}
+    ];
+
+    var map = [];
+
+    var look = [];
+
+    var bfsQueue = [];
+
+    var isSearch = false;
+
+    var over = false;
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = 800;
+        canvas.height = 800;
+        var context = canvas.getContext("2d");
+        context.font = 'bold 12px Arial';
+        init();
+        draw(context);
+        canvas.onclick = function (ev1) {
+            if(isSearch)
+                return;
+            if(over){
+                alert("you were dead!");
+                return;
+            }
+            var x = ev1.clientX - ((document.body.scrollWidth - 800) /2);
+            var y = ev1.clientY;
+            bfsQueue.push({y : Math.floor(x / config.leiX), x : Math.floor(y / config.leiY)});
+            var go = setInterval(function () {
+                if(bfsQueue.length) {
+                    run(context);
+                    isSearch = true;
+                }else{
+                    isSearch = false;
+                    clearInterval(go)
+                }
+            }, 1);
+        }
+
+    };
+    
+    function run(context) {
+        bfs();
+        draw(context);
+    }
+    
+    function init() {
+        var leiNum = 0;
+        for (var i = 0; i < config.mapX; i++) {
+            map.push([]);
+            look.push([]);
+            for (var j = 0; j < config.mapY; j++) {
+                if(leiNum <= config.leiNum) {
+                    map[i].push(-1);
+                    leiNum++;
+                } else
+                    map[i].push(0);
+                look[i].push(0);
+            }
+        }
+        for (var i = 0; i < config.mapX * config.mapY * 2; i++) {
+            var x1 = Math.floor(Math.random() * config.mapX);
+            var y1 = Math.floor(Math.random() * config.mapY);
+            var x2 = Math.floor(Math.random() * config.mapX);
+            var y2 = Math.floor(Math.random() * config.mapY);
+            var temp = map[x1][y1];
+            map[x1][y1] = map[x2][y2];
+            map[x2][y2] = temp;
+        }
+        for (var i = 0; i < config.mapX; i++) {
+            for (var j = 0; j < config.mapY; j++) {
+                if(!isLei(i, j))
+                    map[i][j] = getLei(i, j);
+            }
+        }
+    }
+
+    function draw(context) {
+        context.clearRect(0, 0, 800, 800);
+        context.save();
+        for (var i = 0; i < map.length; i++) {
+            for (var j = 0; j < map[i].length; j++) {
+                context.beginPath();
+                if(!look[i][j]) {
+                    context.fillStyle = "black";
+                    context.rect(j * config.leiX, i * config.leiY, config.leiX - 1, config.leiY - 1);
+                } else if (map[i][j] >= 0) {
+                    if(map[i][j] > 0){
+                        context.fillStyle = "black";
+                        drawFont(context, j * config.leiX + 3, i * config.leiY + 12, map[i][j]);
+                    }else {
+                        context.fillStyle = "gray";
+                        context.rect(j * config.leiX, i * config.leiY, config.leiX - 1, config.leiY - 1);
+                    }
+                } else {
+                    context.arc(j * config.leiX + config.leiX / 2, i * config.leiY + config.leiY / 2, config.leiX / 2, 0, Math.PI * 2.0);
+                    context.fillStyle = "red";
+                }
+                context.fill();
+            }
+        }
+        context.restore();
+    }
+    
+    function bfs() {
+        var temp = bfsQueue.shift();
+        if(map[temp.x][temp.y] === 0) {
+            for (var i = 0; i < direction.length; i++) {
+                var x = temp.x + direction[i].x;
+                var y = temp.y + direction[i].y;
+                if (inMap(x, y) && !look[x][y]) {
+                    if(map[x][y] === 0)
+                        bfsQueue.push({x: x, y: y});
+                    if(!isLei(x, y))
+                        look[x][y] = 1;
+                }
+            }
+        }
+        look[temp.x][temp.y] = 1;
+        if(isLei(temp.x, temp.y)){
+            over = true;
+        }
+    }
+    
+
+    function drawFont(context, x, y, font) {
+        context.fillText(font + "", x, y);
+    }
+    
+    function getLei(x, y) {
+        var num = 0;
+        for (var i = x - 1; i <= x + 1; i++) {
+            for (var j = y - 1; j <= y + 1; j++) {
+                if(inMap(i, j) && isLei(i, j))
+                    num++;
+            }
+        }
+        return num;
+    }
+
+    function inMap(x, y) {
+        return x >= 0 && y >= 0 && x < config.mapX && y < config.mapY;
+    }
+
+    function isLei(x, y) {
+        return map[x][y] === -1;
+    }
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>

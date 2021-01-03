@@ -1,0 +1,192 @@
+
+
+body{
+		margin: 0;
+		padding:0;
+		height: 100%;
+	}
+html{
+    height: calc(100% - 100px);
+    background-color: wheat;
+
+}
+
+.container{
+    font-family: 微软雅黑;
+    background-color: wheat;
+    padding: 5px;
+    margin:40px auto;
+    overflow: hidden;
+}
+
+	.container .menu{
+		width: 240px;
+		margin-left: 130px;
+		float: left;
+	}
+/*position 菜单背景图标*/
+	.positionIicon{
+		display: inline block;
+		width: 23px;
+		height: 23px;
+		margin: 3px 4px;
+		float: left;
+		margin-right: 5px;
+	}
+/*menu图标*/
+	.q-menu-img{
+		background: url("../uploads/texiao.png") no-repeat;
+		background-size:100% 100%;
+	}
+	
+	.q-menu-doit{
+		background: url("../uploads/game.png") no-repeat;
+		background-size:100% 100%;
+	}
+
+	.q-menu-three{
+		background: url("../uploads/houduan.png") no-repeat;
+		background-size:100% 100%;
+	}
+
+    .q-menu-four{
+        background: url("../uploads/duoren.png") no-repeat;
+        background-size:100% 100%;
+    }
+
+
+	.container .menu h3{
+		font-size: 20px;
+		cursor: pointer;
+	}
+    .container .menu ul{
+        display: none;
+    }
+	.container .menu ul li{
+		height: 28px;
+		line-height: 28px;
+	}
+
+	.container .menu ul li a:hover{
+		background: #9FB6CD;
+		border-radius: 14px;
+		-webkit-border-radius: 14px;
+		-moz-border-radius: 14px;
+		-moz-border-radius:14px;
+		color:#fff;
+	
+	}
+
+	ul{
+		list-style: none;
+	}
+
+	a{
+		text-decoration: none;
+		color: #000;
+		font-size: 14px;
+		display: block;
+		width: 180px;
+		height: 26px;
+		padding-left: 10px;
+	}
+
+	.container .menu .selected{
+		background: #ccc;
+		border-radius: 14px;
+	}
+
+
+
+	.container .content{
+		margin-top: 15px;
+		width: calc(100% - 420px);
+		margin-left: 400px;
+		height:100%
+	}
+
+	.container .content .get-menu{
+		margin-left: -10px;
+	}
+
+	.container .content .get-menu a{
+		display: inline-block;
+		font-size: 15px;
+	    height: 40px;
+	}
+
+	.container .content .get-menu a:last-child{
+		margin-left: -8px;
+		color: #7D9EC0;
+	}
+
+	.container .content .get-menu span{
+		display: inline-block;
+	    height: 40px;
+	    margin-left: -110px;
+	}
+
+	.container .content .menu1 .tab {
+		display: none;
+	}
+
+	.container .content .menu1 .active{
+		display: block;
+	}
+
+	.container .content .menu1 .tab p{
+		font-size: 14px;
+		line-height: 20px;
+		color: rgba(0,0,0,1);
+        word-break:break-all;
+	}
+
+	.container .content .menu1 .tab .tt{
+		font-size: 14px;
+		font-weight: bold;
+
+	}
+	.container .content .menu2 .tab {
+		display: none;
+	}
+
+	.container .content .menu2 .active{
+		display: block;
+	}
+
+	.container .content .menu2 .tab p{
+		font-size: 14px;
+		line-height: 20px;
+		color: rgba(0,0,0,0.8);
+        word-break:break-all;
+	}
+
+	.container .content .menu2 .tab .tt{
+		font-size: 14px;
+		font-weight: bold;
+
+	}
+	.container .content .menu3 .tab {
+		display: none;
+	}
+
+	.container .content .menu3 .active{
+		display: block;
+	}
+
+	.container .content .menu3 .tab p{
+		font-size: 14px;
+		line-height: 20px;
+		color: rgba(0,0,0,0.8);
+        word-break:break-all;
+	}
+
+	.container .content .menu3 .tab .tt{
+		font-size: 13px;
+		font-weight: bold;
+
+	}
+
+	.content-iframe{
+		border-left: 1px solid #aaa;
+	}

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>tree</title>
+    <script src="resources/js/util.js"></script>
+</head>
+<style>
+    body{
+        padding: 0;
+        margin: 0;
+    }
+    .game{
+        text-align: center;
+    }
+    .edit_window{
+        position: relative;
+        top: 200px;
+        left: 0px;
+    }
+
+</style>
+<script>
+
+    var config = {
+        gameId:2,
+        canvasWidth:800,
+        canvasHeight:800,
+        taskWindowX:0,
+        taskWindowY:230,
+        eventWindowX:400,
+        eventWindowY:230,
+        LevelX:300,
+        LevelY:100,
+        an:20
+    };
+    var game = {
+        context:null
+    };
+    var cache = {
+        tasks:null,
+        event:null,
+        level:0,
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        game.context = canvas.getContext("2d");
+        setInterval(function () {
+            draw();
+        }, config.an);
+
+        canvas.onmousedown = function (ev1) {
+            ws.send(getReqJson(2, {"event":1, "param":1}));
+        };
+
+    };
+
+    function draw() {
+        var context = game.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+        if(cache.tasks != null)
+            drawTask();
+        if(cache.event != null)
+            drawEvent();
+        drawLevel();
+        context.restore();
+    }
+
+    function drawTask() {
+        var context = game.context;
+        context.beginPath();
+        context.font = "15px bold 黑体";
+        context.fillStyle = "black";
+        context.fillText("任务列表:", config.taskWindowX + 10, config.taskWindowY);
+        context.closePath();
+        for (var i = 0; i < cache.tasks.length; i++) {
+            var task = cache.tasks[i];
+            context.beginPath();
+            context.font = "15px bold 黑体";
+            context.fillStyle = "black";
+            context.fillText((i+1) + ":" + task.name, config.taskWindowX + 10, config.taskWindowY + 40 * (i + 1));
+            context.fillText(task.condition, config.taskWindowX + 10, config.taskWindowY + 20 + 40 * (i + 1));
+            context.closePath();
+        }
+    }
+    
+    function drawEvent() {
+        var context = game.context;
+        context.beginPath();
+        context.font = "15px bold 黑体";
+        context.fillStyle = "black";
+        context.fillText("事件列表:", config.eventWindowX + 10, config.eventWindowY);
+        context.closePath();
+        for (var i = 0; i < cache.event.length; i++) {
+            var event = cache.event[i];
+            context.beginPath();
+            context.font = "15px bold 黑体";
+            context.fillStyle = "black";
+            context.fillText(event.event + ":" + event.desc, config.eventWindowX + 10, config.eventWindowY + 20 * (i + 1));
+            context.closePath();
+        }
+    }
+    
+    function drawLevel() {
+        var context = game.context;
+        context.beginPath();
+        context.font = "30px bold 黑体";
+        context.fillStyle = "black";
+        context.fillText("Level:" + cache.level, config.LevelX, config.LevelY);
+        context.closePath();
+        context.beginPath();
+        context.font = "12px bold 黑体";
+        context.fillStyle = "black";
+        context.fillText("点击屏幕升级", config.LevelX, config.LevelY + 30);
+        context.closePath();
+    }
+    
+    function addTask() {
+        var taskName = document.getElementById("taskName");
+        var taskCondition = document.getElementById("taskCondition");
+        ws.send(getReqJson(3, {"taskName":taskName.value, "taskCondition":taskCondition.value}));
+    }
+    
+    function addEvent() {
+        var eventId = document.getElementById("eventId");
+        var eventName = document.getElementById("eventName");
+        ws.send(getReqJson(4, {"eventId":eventId.value, "eventName":eventName.value}));
+    }
+    
+    function triggerEvent() {
+        var triggerEventId = document.getElementById("triggerEventId");
+        var triggerEventNum = document.getElementById("triggerEventNum");
+        ws.send(getReqJson(2, {"event":triggerEventId.value, "param":triggerEventNum.value}));
+    }
+
+
+    var response = {
+        1:function (data) {
+            cache.tasks = data.tasks;
+        },
+        2:function (data) {
+            cache.event = data.events;
+        },
+        3:function (data) {
+            alert(data.error);
+        },
+        4:function (data) {
+            cache.level = data.level;
+        }
+    };
+
+
+
+    var ws = new WebSocket("ws://106.54.138.163:8080/ws");
+
+    ws.onopen = function() {
+        console.log("client：打开连接");
+        ws.send(getReqJson(1, {"a":1}));
+    };
+    ws.onmessage = function(e) {
+        var resp = toMap(e.data);
+        var msgId = resp["msgId"];
+        response[msgId](resp);
+    };
+    ws.onclose = function(params) {
+        console.log("client：关闭连接");
+    };
+
+    function getReqJson(msgId, data) {
+        var msg = getMsgMap(config.gameId, msgId, data);
+        return toJSON(msg);
+    }
+
+</script>
+<body>
+    <div class="game">
+        <table id="edit" class="edit_window">
+            <tr>
+                <td>任务名称:<input id="taskName" type="text"/></td>
+            </tr>
+            <tr>
+                <td>完成条件:<input id="taskCondition" type="text"/></td>
+            </tr>
+            <tr>
+                <td><input id="addTask" type="button" value="点击新建任务" onclick="addTask()"/></td>
+            </tr>
+            <tr>
+                <td>事件序号:<input id="eventId" type="number"/></td>
+            </tr>
+            <tr>
+                <td>事件名称:<input id="eventName" type="text"/></td>
+            </tr>
+            <tr>
+                <td><input id="addEvent" type="button" value="点击添加事件" onclick="addEvent()"/></td>
+            </tr>
+            <tr>
+                <td>事件序号:<input id="triggerEventId" type="number"/></td>
+            </tr>
+            <tr>
+                <td>触发次数:<input id="triggerEventNum" type="number"/></td>
+            </tr>
+            <tr>
+                <td><input id="triggerEvent" type="button" value="点击触发事件" onclick="triggerEvent()"/></td>
+            </tr>
+        </table>
+        <canvas id="canvas" style="border: 1px black solid;margin-top: -220px"></canvas>
+    </div>
+</body>
+</html>

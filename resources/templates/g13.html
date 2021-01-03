@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>hello</title>
+    <script src="resources/js/util.js"></script>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+</style>
+<script>
+
+    var config = {
+        canvasWidth: 800,      //画布宽
+        canvasHeight: 800,     //画布高
+        context : null,
+        groundHeight:20,
+        roleGroundY:[400, 780],
+        an:20,
+        p:0.7,
+        jumpF:-12,
+        r:10,
+        jumpTimes:2,
+        wallV:3,
+        gameId:3,
+    };
+
+    var cache = {
+        roles:[],
+        roleId:0,
+        walls:[],
+        balls:[],
+        skillCold:[0, 0],
+        color:["red", "blue"],
+        start:false,
+    };
+
+    window.onload = function (ev) {
+        var canvas = document.getElementById("canvas");
+        canvas.width = config.canvasWidth;
+        canvas.height = config.canvasHeight;
+        config.context = canvas.getContext("2d");
+
+        // setInterval(function () {
+        //     if(cache.start) {
+        //         // update();
+        //         draw();
+        //         // punch();
+        //     }
+        // }, config.an);
+
+        canvas.onmousedown = function (ev1) {
+            ws.send(getReqJson(3, {id:cache.roleId}));
+        }
+    };
+
+    window.onkeydown = function (ev) {
+        switch (ev.keyCode) {
+            case 81:
+                ws.send(getReqJson(4, {roleId:cache.roleId, skillId:0}));
+                break;
+            case 87:
+                ws.send(getReqJson(4, {roleId:cache.roleId, skillId:1}));
+                break;
+        }
+    };
+
+    function update() {
+        roleUpdate();
+        wallUpdate();
+    }
+
+    function roleUpdate() {
+        for (var i = 0; i < cache.roles.length; i++) {
+            var role = cache.roles[i];
+            var id = role.id;
+            var l = role.y + config.r;
+            if(l >= config.roleGroundY[id]){
+                if(l > config.roleGroundY[id])
+                    role.y = config.roleGroundY[id] - config.r;
+                role.yv = 0;
+                role.jumpTimes = 0;
+                continue;
+            }
+            role.y += role.yv;
+            role.yv += config.p;
+        }
+    }
+    
+    function wallUpdate() {
+        for (var i = 0; i < cache.walls.length; i++) {
+            var roleWall = cache.walls[i];
+            for (var j = 0; j < roleWall.length; j++) {
+                var wall = roleWall[j];
+                wall.x -= config.wallV;
+            }
+        }
+    }
+
+    function draw() {
+        var context = config.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        context.save();
+        drawRole();
+        drawGround();
+        drawWall();
+        drawMsg();
+        context.restore();
+    }
+    
+    function drawMsg() {
+        var context = config.context;
+        context.beginPath();
+        context.font = "12px bold 黑体";
+        context.fillStyle = "black";
+        context.fillText("当前 阵营:" + cache.color[cache.roleId], 300, 100);
+        context.fillText("Q加速冷却:" + (cache.skillCold[0] === 0 ? "可以使用" : cache.skillCold[0]), 300, 130);
+        context.fillText("W丢球冷却:" + (cache.skillCold[1] === 0 ? "可以使用" : cache.skillCold[1]), 300, 160);
+        context.closePath();
+    }
+
+    function drawRole() {
+        var context = config.context;
+        var roles = cache.roles;
+        for (var i = 0; i < roles.length; i++) {
+            var role = roles[i];
+            context.beginPath();
+            context.arc(role.x, role.y, config.r, 0, Math.PI * 2.0);
+            context.fillStyle = cache.color[i];
+            context.fill();
+            context.closePath();
+        }
+    }
+    
+    function drawGround() {
+        var context = config.context;
+        for (var i = 0; i < config.roleGroundY.length; i++) {
+            context.beginPath();
+            context.rect(0, config.roleGroundY[i], config.canvasWidth, config.groundHeight);
+            context.fillStyle = "black";
+            context.fill();
+            context.closePath();
+        }
+    }
+    
+    function drawWall() {
+        var context = config.context;
+        for (var i = 0; i < cache.walls.length; i++) {
+            var roleWall = cache.walls[i];
+            for (var j = 0; j < roleWall.length; j++) {
+                var wall = roleWall[j];
+                context.beginPath();
+                context.rect(wall.x, wall.y, wall.w, wall.h);
+                context.fillStyle = "black";
+                context.fill();
+                context.closePath();
+            }
+            var roleBall = cache.balls[i];
+            for (var j = 0; j < roleBall.length; j++) {
+                var ball = roleBall[j];
+                context.beginPath();
+                context.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2.0);
+                context.fillStyle = "black";
+                context.fill();
+                context.closePath();
+            }
+        }
+    }
+
+    function drawTip(tip, size) {
+        var context = config.context;
+        context.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+        for (var i = 0; i < tip.length; i++) {
+            var msg = tip[i];
+            context.beginPath();
+            context.font = size + "px bold 黑体";
+            context.fillStyle = "black";
+            context.fillText(msg, 300, 100 + i * 30);
+            context.closePath();
+        }
+    }
+
+    function createWall(id, height, width) {
+        cache.walls[id].push({x:config.canvasWidth, y:config.roleGroundY[id] - height, h:height, w:width});
+    }
+    
+    function jump(role) {
+        if(role.jumpTimes < config.jumpTimes) {
+            role.yv = config.jumpF;
+            role.y += role.yv;
+            role.jumpTimes++;
+        }
+    }
+
+    function punch() {
+        for (var i = 0; i < cache.roles.length; i++) {
+            var role = cache.roles[i];
+            for (var j = 0; j < cache.walls[i].length; j++) {
+                var wall = cache.walls[i][j];
+                //判断左右顶点
+                if(inCircle(wall.x, wall.y, role) || inCircle(wall.x + wall.w, wall.y, role)){
+                    ws.send(getReqJson(2, {winner:cache.roleId === 0 ? 1 : 0}));
+                    return
+                }
+                //判断左边界
+                if(wall.x - role.x <= config.r && wall.x - role.x >= 0 && role.y - config.r >= wall.y) {
+                    ws.send(getReqJson(2, {winner:cache.roleId === 0 ? 1 : 0}));
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * 某点是否在圆中
+     * */
+    function inCircle(x, y, role) {
+        return Math.pow(Math.abs(x - role.x), 2) + Math.pow(Math.abs(y - role.y), 2) <= Math.pow(config.r, 2);
+    }
+
+    var response = {
+        1:function (data) {
+            cache.start = true;
+            cache.roleId = data.id;
+            cache.roles = data.roles;
+            cache.walls = data.walls;
+            cache.balls = data.balls;
+        },
+        2:function (data) {
+            cache.roles = data.roles;
+            cache.walls = data.walls;
+            cache.balls = data.balls;
+            cache.skillCold = data.skill;
+            draw();
+        },
+        3:function (data) {
+            // jump(cache.roles[data.id]);
+        },
+        4:function (data) {
+            cache.start = false;
+            if(data.winner === cache.roleId)
+                drawTip(["you win"], 24);
+            else
+                drawTip(["you lose"], 24);
+        },
+        5:function (data) {
+            drawTip(["当前除你之外的人数:" + data.manNum, "匹配中。。。"], 12);
+        }
+    };
+
+    var ws = new WebSocket("ws://106.54.138.163:8080/ws");
+
+    ws.onopen = function() {
+        console.log("client：打开连接");
+        ws.send(getReqJson(1, {}));
+    };
+    ws.onmessage = function(e) {
+        var resp = toMap(e.data);
+        var msgId = resp["msgId"];
+        response[msgId](resp);
+    };
+    ws.onclose = function(params) {
+        console.log("client：关闭连接");
+    };
+
+    function getReqJson(msgId, data) {
+        var msg = getMsgMap(config.gameId, msgId, data);
+        return toJSON(msg);
+    }
+
+
+</script>
+<body>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+</body>
+</html>
