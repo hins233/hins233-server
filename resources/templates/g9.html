@@ -158,9 +158,9 @@
         context.font = "15px bold 黑体";
         context.fillStyle = "black";
         context.fillText("节点属性", sx + 50, sy + 30);
-        context.fillText("节点编号:" + node.Id, sx + 10, sy + 60);
-        context.fillText("总  战 力:" + node.FightPoint, sx + 10, sy + 90);
-        context.fillText("自身战力:" + node.FightPointSelf, sx + 10, sy + 120);
+        context.fillText("节点编号:" + node.id, sx + 10, sy + 60);
+        context.fillText("总  战 力:" + node.fightPoint, sx + 10, sy + 90);
+        context.fillText("自身战力:" + node.fightPointSelf, sx + 10, sy + 120);
         context.fillText("删      除", sx + 50, sy + 150);
         context.fillText("添加子节点", sx + 40, sy + 180);
         context.closePath();
@@ -170,15 +170,15 @@
     function drawNode(node) {
         var context = game.context;
         context.beginPath();
-        context.arc(node["X"], node["Y"], config.nodeR, 0, Math.PI * 2.0);
+        context.arc(node["x"], node["y"], config.nodeR, 0, Math.PI * 2.0);
         context.fillStyle = "black";
         console.log("return node " + JSON.stringify(node))
-        var dadId = node["Dad"];
+        var dadId = node["dad"];
         console.log("dadId" + dadId)
         if (dadId !== -1) {
             var dad = cache.allNode[dadId];
-            context.moveTo(node["X"], node["Y"]);
-            context.lineTo(dad["X"], dad["Y"]);
+            context.moveTo(node["x"], node["y"]);
+            context.lineTo(dad["x"], dad["y"]);
             context.stroke();
         }
         context.fill();
@@ -190,10 +190,10 @@
             console.log("return node " + JSON.stringify(data))
             cache.allNode = data["allNode"];
             cache.startFightPoint = cache.rootFightPoint;
-            cache.endFightPoint = cache.allNode[0].FightPoint;
+            cache.endFightPoint = cache.allNode[0].fightPoint;
             cache.fightPointAn = true;
             cache.fightAddV = (cache.endFightPoint - cache.startFightPoint) / (config.fightAn / config.an);
-            cache.rootFightPoint = cache.allNode[0].FightPoint;
+            cache.rootFightPoint = cache.allNode[0].fightPoint;
             cache.lastChecked = cache.allNode[cache.lastChecked.id];
         }
     };

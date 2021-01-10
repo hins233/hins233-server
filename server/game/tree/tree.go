@@ -9,7 +9,6 @@ const (
 	BuilderGenerateFight = iota + 1
 )
 
-// 使用go自带的format工具格式化代码文件
 type Tree struct {
 	Id      int
 	root    Node
@@ -46,6 +45,16 @@ func (t *Tree) RemoveNode(nodeId int) error {
 		return fmt.Errorf("can't del root node")
 	}
 	return delNode.Delete(t.allNode)
+}
+
+func (t *Tree) ChangePos(nodeId, x, y int) error {
+	node, ok := t.allNode[nodeId].(*FightNode)
+	if !ok {
+		return fmt.Errorf("不存在此node")
+	}
+	node.X = x
+	node.Y = y
+	return nil
 }
 
 func (t *Tree) ToMap() map[string]interface{} {

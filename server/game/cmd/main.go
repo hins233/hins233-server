@@ -2,18 +2,17 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
+	json "github.com/json-iterator/go"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"server/server/game"
-	"server/server/game/tree"
 	"syscall"
 	"time"
 )
@@ -58,12 +57,10 @@ func main() {
 }
 
 func handlerIndex(w http.ResponseWriter, r *http.Request) {
-
-	log.Printf("reqeust to %s", r.URL)
 	r.ParseForm()
-	fmt.Println(r.PostForm.Get("id"),r.FormValue("id"))
+	fmt.Println(r.PostForm.Get("id"), r.FormValue("id"))
 	id := r.FormValue("id")
-	log.Printf("reqeust id %s", id)
+	log.Printf("--------- %s --reqeust to %s --reqeust id %s", time.Now().Format("2006-01-02 15:04:05"), r.URL, id)
 	game.RenderHtml(w, id, nil)
 }
 
@@ -76,23 +73,18 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	for {
-		bts, op, err := wsutil.ReadClientData(conn)
+		msg, _, err := wsutil.ReadClientData(conn)
 		if err != nil {
 			log.Printf("read message error: %v", err)
 			return
 		}
-		fmt.Println(string(bts))
-
-		t := tree.NewTree()
-		resp := t.ToMap()
-		resp["msgId"] = 1
-		res, err := json.Marshal(resp)
-		fmt.Println(string(res))
-		err = wsutil.WriteServerMessage(conn, op, res)
+		fmt.Println(string(msg))
+		param := make(map[string]interface{})
+		err = json.Unmarshal(msg, &param)
 		if err != nil {
-			log.Printf("write message error: %v", err)
-			return
+			log.Printf("msg Unmarshal failed,err %v", err)
 		}
+		game.Dispatcher(param, conn)
 	}
 
 }

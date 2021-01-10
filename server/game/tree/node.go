@@ -8,13 +8,13 @@ type Node interface {
 
 // FightNode 战力节点
 type FightNode struct {
-	Id             int // 节点id
-	X              int // x 坐标
-	Y              int // y 坐标
-	FightPointSelf int // 节点自身的值
-	FightPoint     int // 当前节点的总值
-	Dad            int // 父节点，0为根节点
-	Sons           map[int]*FightNode
+	Id             int                `json:"id"`             // 节点id
+	X              int                `json:"x"`              // x 坐标
+	Y              int                `json:"y"`              // y 坐标
+	FightPointSelf int                `json:"fightPointSelf"` // 节点自身的值
+	FightPoint     int                `json:"fightPoint"`     // 当前节点的总值
+	Dad            int                `json:"dad"`            // 父节点，0为根节点
+	Sons           map[int]*FightNode `json:"sons"`
 }
 
 //func (n *FightNode) AddChild(node Node) error {
@@ -70,14 +70,3 @@ func (n *FightNode) countValue() {
 	}
 	n.FightPoint += n.FightPointSelf
 }
-
-
-
-
-
-
-
-
-
-
-
