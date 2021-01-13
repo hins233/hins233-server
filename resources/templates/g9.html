@@ -131,10 +131,10 @@
         context.closePath();
         if (cache.fightPointAn) {
             context.beginPath();
-            context.font = "45px bold 黑体";
+            context.font = "35px bold 黑体";
             context.fillStyle = "black";
             cache.startFightPoint += cache.fightAddV;
-            context.fillText(Math.ceil(cache.startFightPoint) + (cache.fightAddV < 0 ? "↓" : "↑"), 370, 300);
+            context.fillText(Math.ceil(cache.startFightPoint) + (cache.fightAddV < 0 ? "↓" : "↑"), 470, 200);
             if ((cache.fightAddV > 0 && cache.startFightPoint >= cache.endFightPoint)
                 || (cache.fightAddV < 0 && cache.startFightPoint <= cache.endFightPoint)) {
                 cache.startFightPoint = 0;

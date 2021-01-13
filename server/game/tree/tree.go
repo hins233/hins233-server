@@ -9,6 +9,35 @@ const (
 	BuilderGenerateFight = iota + 1
 )
 
+var (
+	buildNodeRegister = make(map[int]buildNodeFactory)
+)
+
+type buildNodeFactory func(t *Tree, dad Node) error
+
+// todo 这种方法很傻逼，先实现功能。后面再想优化处理
+var buildFightNode = func(t *Tree, dad Node) error {
+	node := &FightNode{
+		Id:             t.getId(),
+		FightPointSelf: rand.Intn(100) + 1,
+		Sons:           map[int]*FightNode{},
+	}
+	t.allNode[node.Id] = node
+	if dad == nil {
+		node.Dad = -1
+		node.X = 400
+		node.Y = 200
+		node.FightPoint = node.FightPointSelf
+		return nil
+	}
+	fightDad := dad.(*FightNode)
+	node.X = fightDad.X + 20
+	node.Y = fightDad.Y + 20
+	node.Dad = fightDad.Id
+	fightDad.Sons[node.Id] = node
+	return node.RefreshAllNode(t.allNode)
+}
+
 type Tree struct {
 	Id      int
 	root    Node
@@ -63,8 +92,6 @@ func (t *Tree) ToMap() map[string]interface{} {
 	return toM
 }
 
-var buildNodeRegister = make(map[int]func(t *Tree, dad Node) error)
-
 func (t *Tree) buildNode(module int, dad Node) error {
 	builder, ok := buildNodeRegister[module]
 	if ok {
@@ -78,26 +105,6 @@ func (t *Tree) getId() int {
 	id := t.Id
 	t.Id++
 	return id
-}
-
-func buildFightNode(t *Tree, dad Node) error {
-	node := &FightNode{
-		Id:             t.getId(),
-		FightPointSelf: rand.Intn(100) + 1,
-		Sons:           map[int]*FightNode{},
-	}
-	t.allNode[node.Id] = node
-	if dad == nil {
-		node.Dad = -1
-		node.X = 400
-		node.Y = 200
-		node.FightPoint = node.FightPointSelf
-		return nil
-	}
-	node.X = dad.(*FightNode).X + 20
-	node.Y = dad.(*FightNode).Y + 20
-	node.Dad = dad.(*FightNode).Id
-	return node.RefreshAllNode(t.allNode)
 }
 
 func registerBuildNodeFunc(module int, fn func(t *Tree, dad Node) error) {

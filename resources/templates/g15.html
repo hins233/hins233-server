@@ -72,7 +72,7 @@
 
         //绘制背景
         context.beginPath();
-        context.fillStyle = "rgba(0,0,0,1)";
+        context.fillStyle = "rgba(0,0,0,1)";    // rgba 透明属性，0001表示全黑。0000代表白色
         context.fillRect(0, 0, config.canvasWidth, config.canvasHeight);
         context.closePath();
 
@@ -94,8 +94,8 @@
         context.beginPath();
         context.arc(cache.ball.x, cache.ball.y, cache.ball.R, 0, 2.0*Math.PI);
         var grd = context.createRadialGradient(cache.ball.x, cache.ball.y, cache.ball.r, cache.ball.x, cache.ball.y, cache.ball.R);
-        grd.addColorStop(0, "rgba(0,0,0,0)");
-        grd.addColorStop(1, 'rgba(0,0,0,1)');
+        grd.addColorStop(0, "rgba(0,0,0,0)"); // 0000 是直接透视
+        grd.addColorStop(1, "black");
         context.fillStyle = grd;
         context.fill();
         context.closePath();

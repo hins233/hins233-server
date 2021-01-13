@@ -58,7 +58,6 @@ func main() {
 
 func handlerIndex(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	fmt.Println(r.PostForm.Get("id"), r.FormValue("id"))
 	id := r.FormValue("id")
 	log.Printf("--------- %s --reqeust to %s --reqeust id %s", time.Now().Format("2006-01-02 15:04:05"), r.URL, id)
 	game.RenderHtml(w, id, nil)
