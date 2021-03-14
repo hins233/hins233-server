@@ -190,7 +190,7 @@
 
 
 
-    var ws = new WebSocket("ws://localhost:8080/ws");
+    var ws = new WebSocket("ws://localhost:8000/ws");
 
     ws.onopen = function() {
         console.log("client：打开连接");
@@ -202,7 +202,7 @@
     };
     ws.onclose = function(params) {
         console.log("client：关闭连接");
-        ws = new WebSocket("ws://localhost:8080/ws");
+        // ws = new WebSocket("ws://localhost:8000/ws");
     };
 
     function getReqJson(msgId, data) {

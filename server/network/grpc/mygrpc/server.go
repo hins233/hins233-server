@@ -1,9 +1,14 @@
-package mygrpc
+package main
 
 import (
 	"context"
 	"server/server/network/grpc/pb"
 )
+
+func main() {
+	//s := grpc.NewServer()
+	//s.RegisterService()
+}
 
 type MyService struct {
 }
