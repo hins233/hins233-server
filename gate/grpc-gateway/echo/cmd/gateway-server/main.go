@@ -7,10 +7,9 @@ package main
 import (
 	"context"
 	"flag"
-	"server/gate/grpc-gateway/echo/gateway"
-
 	"github.com/golang/glog"
-
+	"server/gate/grpc-gateway/echo/gateway"
+	"server/gate/grpc-gateway/echo/server"
 )
 
 var (
@@ -35,6 +34,21 @@ func main() {
 	if err := gateway.Run(ctx, opts); err != nil {
 		glog.Fatal(err)
 	}
+	//if err := server.RunInProcessGateway(ctx,":8080"); err != nil {
+	//	glog.Fatal(err)
+	//}
+}
+
+func test() {
+	flag.Parse()
+	defer glog.Flush()
+
+	ctx := context.Background()
+
+	if err := server.RunInProcessGateway(ctx, ":8080"); err != nil {
+		glog.Fatal(err)
+	}
+
 }
 
 // curl -v 127.0.0.1:8080/v1/example/echo/hinstang/rainbow

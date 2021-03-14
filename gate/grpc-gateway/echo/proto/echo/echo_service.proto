@@ -66,6 +66,9 @@ service EchoService {
 				get: "/v1/example/echo1/{id}/{line_num}/{status.note}"
 			}
 			additional_bindings {
+				get: "/v1/example/echo1/{id}/{lang}/{status.progress}"
+			}
+			additional_bindings {
 				get: "/v1/example/echo2/{no.note}"
 			}
 		};

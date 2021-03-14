@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"flag"
+	"server/gate/grpc-gateway/echo/server"
 
 	"github.com/golang/glog"
 )

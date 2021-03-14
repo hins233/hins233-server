@@ -1,4 +1,4 @@
-package findway
+package jps
 
 type MapConfig struct {
 	maps   []byte
@@ -9,10 +9,12 @@ type MapConfig struct {
 func InitMap(mapPosition [][]int) *MapConfig {
 	width := len(mapPosition[0])
 	height := len(mapPosition)
-	maps := make([]byte, 0)
+	maps := make([]byte, width*height)
+	var i = 0
 	for _, row := range mapPosition {
 		for _, point := range row {
-			maps = append(maps, byte(point))
+			maps[i] = byte(point)
+			i++
 		}
 	}
 	return &MapConfig{

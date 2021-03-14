@@ -3,7 +3,7 @@ package main
 import (
 	"google.golang.org/grpc"
 	"net"
-	"server/server/network/grpc/mygrpc"
+
 	"server/server/network/grpc/pb"
 )
 

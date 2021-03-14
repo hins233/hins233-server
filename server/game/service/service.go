@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"server/server/game/findway"
 	"server/server/game/tree"
 )
 
@@ -32,10 +33,14 @@ func RegisterService(gameId int, service GameService) {
 	serviceMap[gameId] = append(serviceMap[gameId], service)
 }
 
+// todo 这里设计其实不太好,不应该在这个base文件注册服务，因为后面每需要新增一个service就得在这里加一个。
+//
 func init() {
 	RegisterService(1, &tree.TestController{})
 	RegisterService(1, &tree.StartController{})
 	RegisterService(1, &tree.RemoveController{})
 	RegisterService(1, &tree.AddController{})
 	RegisterService(1, &tree.ChangePosController{})
+	RegisterService(16, &findway.StartController{})
+	RegisterService(16, &findway.StartController{})
 }

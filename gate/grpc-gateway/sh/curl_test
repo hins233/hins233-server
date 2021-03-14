@@ -1,0 +1,9 @@
+curl -X POST 127.0.0.1:8080/v1/example/echo/12345
+curl -v 127.0.0.1:8080/v1/example/echo/1235/423412
+
+/v1/example/echo/{id}/{num}/{lang}
+curl -X POST 127.0.0.1:8080/v1/example/echo/2222/22222/22222
+/v1/example/echo1/{id}/{line_num}/{status.note}
+curl -v 127.0.0.1:8080/v1/example/echo1/66666/66666/66666
+/v1/example/echo1/{id}/{lang}/{status.progress}
+curl -v 127.0.0.1:8080/v1/example/echo1/888888/88888/hins
