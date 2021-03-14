@@ -1,11 +1,11 @@
 syntax = "proto3";
-option go_package = "proto/echo";
+option go_package = "github.com/rainbowSong/hins233-server/example/proto";
 
 // Echo Service
 //
 // Echo Service API consists of a single service which returns
 // a message.
-package grpc.gateway.examples.echo;
+package echo.proto;
 
 import "google/api/annotations.proto";
 import "google/protobuf/field_mask.proto";
@@ -21,9 +21,10 @@ message Embedded {
 
 // SimpleMessage represents a simple message sent to the Echo service.
 message SimpleMessage {
+	// Id represents the message identifier.
 	string id = 1;
 	int64 num = 2;
-	oneof code { // oneof 表示有很多个可选字段时，最多只能设置一个， 并且同时至多一个字段会被设置， 你可以加强这个行为，使用oneof特性节省内存。像可选字段， 除了它们会共享内存， 至多一个字段会被设置。 设置其中一个字段会清除其它字段
+	oneof code {
 		int64 line_num = 3;
 		string lang = 4;
 	}
@@ -59,13 +60,13 @@ service EchoService {
 				get: "/v1/example/echo/{id}/{num}"
 			}
 			additional_bindings {
-				post: "/v1/example/echo/{id}/{num}/{lang}"
+				get: "/v1/example/echo/{id}/{num}/{lang}"
 			}
 			additional_bindings {
 				get: "/v1/example/echo1/{id}/{line_num}/{status.note}"
 			}
 			additional_bindings {
-				post: "/v1/example/echo2/{no.note}"
+				get: "/v1/example/echo2/{no.note}"
 			}
 		};
 	}
